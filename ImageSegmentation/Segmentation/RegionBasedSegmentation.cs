@@ -13,7 +13,7 @@ namespace ImageSegmentation.Segmentation
         public static int defaultSegmentSize = 5; // размер начального квадратного сегмента по умолчанию
         public static int defaultSegmentsCount = 80; // максимальное количество начальных квадратных сегментов изображения
         public static double regularizationParameter = 1.0; // регуляризационный параметр для рассчета геометрической близости
-        public static int requiredSegmentsCount = 5; // требуемое количество регионов
+        public static int requiredSegmentsCount = 4; // требуемое количество регионов
 
         public static SegmentedImage PerformSegmentation(Bitmap image)
         {

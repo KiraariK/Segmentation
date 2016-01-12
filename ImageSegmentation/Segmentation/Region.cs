@@ -9,7 +9,9 @@ namespace ImageSegmentation.Segmentation
 {
     public class Region
     {
+        public enum PixelAction { none, remove, add } // Перечисление, необходимое для обозначения действия над пикселями
         public List<Pixel> RegionPixels { get; set; } // Список пикселей данного региона
+        public List<double> DistanceSums { get; set; } // Список сумм расстояний от пикселя до всех остальных пикселей региона
         public int[] SpacialSenterId { get; set; } // Идентификатор пикслея, являющегося центром региона
         public int Area { get; set; } // Пложадь региона
         public double[] AverageTextureFeature { get; set; } // Среднее значение текстурных характеристик региона
@@ -33,7 +35,9 @@ namespace ImageSegmentation.Segmentation
         /// <summary>
         /// Пересчитывает центральный пиксель региона
         /// </summary>
-        private void CalculateCenter()
+        /// <param name="action">Действие выполненной над пикселями региона перед пересчетом центрального пикселя</param>
+        /// <param name="pixels">Массив пикселей, который были изменены в регионе перед пересчетом центрального пикселя</param>
+        private void CalculateCenter(PixelAction action = PixelAction.none, Pixel[] pixels = null)
         {
             if (RegionPixels == null)
                 return;
@@ -43,27 +47,84 @@ namespace ImageSegmentation.Segmentation
             for (int i = 0; i < RegionPixels.Count; i++)
                 pixelIds[i] = RegionPixels[i].Id;
 
-            // Ищем суммы расстояний от каждой точки до каждой точки региона
-            double[] sums = new double[RegionPixels.Count];
-            for (int i = 0; i < RegionPixels.Count; i++)
+            if (action == PixelAction.none)
             {
-                // Считаем сумму расстояний от точки i до всех остальных точек
-                for (int j = 0; j < RegionPixels.Count; j++)
-                {
-                    if (i != j)
+                // Инициализация массива сумм расстояний
+                DistanceSums = new List<double>();
+                for (int i = 0; i < RegionPixels.Count; i++)
+                    DistanceSums.Add(0.0);
+
+                // Ищем суммы расстояний от каждой точки до каждой точки региона
+                for (int i = 0; i < RegionPixels.Count; i++)
+                {                    
+                    // Считаем сумму расстояний от точки i до всех остальных точек
+                    for (int j = 0; j < RegionPixels.Count; j++)
                     {
-                        // Прибавляем к сумме расстояние от точки i до точки j
-                        sums[i] += Math.Sqrt((pixelIds[i][0] - pixelIds[j][0]) * (pixelIds[i][0] - pixelIds[j][0]) +
-                            (pixelIds[i][1] - pixelIds[j][1]) * (pixelIds[i][1] - pixelIds[j][1]));
+                        if (i != j)
+                        {
+                            // Прибавляем к сумме расстояние от точки i до точки j
+                            DistanceSums[i] += Math.Sqrt((pixelIds[i][0] - pixelIds[j][0]) * (pixelIds[i][0] - pixelIds[j][0]) +
+                                (pixelIds[i][1] - pixelIds[j][1]) * (pixelIds[i][1] - pixelIds[j][1]));
+                        }
                     }
                 }
             }
+            else if (action == PixelAction.add)
+            {
+                if (pixels == null)
+                    return;
+
+                // Добавляем новые элементы списка расстояний для новых пикселей
+                for (int i = 0; i < pixels.Length; i++)
+                {
+                    double sum = 0.0;
+                    for (int j = 0; j < RegionPixels.Count; j++)
+                    {
+                        sum += Math.Sqrt((pixels[i].Id[0] - pixelIds[j][0]) * (pixels[i].Id[0] - pixelIds[j][0]) +
+                            (pixels[i].Id[1] - pixelIds[j][1]) * (pixels[i].Id[1] - pixelIds[j][1]));
+                    }
+                    DistanceSums.Add(sum);
+                }
+
+                // Прибавляем к расстояниям для пикселей, которые ранее присутствовали в регионе, расстояния до новых пикселей
+                for (int i = 0; i < RegionPixels.Count; i++)
+                {
+                    for (int j = 0; j < pixels.Length; j++)
+                    {
+                        // Пропускаем только что добавленные пиксели (для них нужные расстояния уже посчитаны)
+                        if (pixelIds[i][0] == pixels[j].Id[0] && pixelIds[i][1] == pixels[j].Id[1])
+                            continue;
+
+                        DistanceSums[i] += Math.Sqrt((pixelIds[i][0] - pixels[j].Id[0]) * (pixelIds[i][0] - pixels[j].Id[0]) +
+                            (pixelIds[i][1] - pixels[j].Id[1]) * (pixelIds[i][1] - pixels[j].Id[1]));
+                    }
+                }
+            }
+            else if (action == PixelAction.remove)
+            {
+                // В случае удаления пикселей, они удалены из списка пикселей и из списка расстояний уже до текущего момента
+
+                if (pixels == null)
+                    return;
+
+                // Уменьшаем суммы расстояний оставшихся пикселей на величины расстояний до удаленных пикселей
+                for (int i = 0; i < pixels.Length; i++)
+                {
+                    for (int j = 0; j < RegionPixels.Count; j++)
+                    {
+                        DistanceSums[j] -= Math.Sqrt((pixels[i].Id[0] - pixelIds[j][0]) * (pixels[i].Id[0] - pixelIds[j][0]) +
+                            (pixels[i].Id[1] - pixelIds[j][1]) * (pixels[i].Id[1] - pixelIds[j][1]));
+                    }
+                }
+            }
+            else
+                return;
 
             // Определение центрального пикселя региона
-            double minSum = sums.Min();
-            for (int i = 0; i < sums.Length; i++)
+            double minSum = DistanceSums.Min();
+            for (int i = 0; i < DistanceSums.Count; i++)
             {
-                if (sums[i] == minSum)
+                if (DistanceSums[i] == minSum)
                 {
                     SpacialSenterId = pixelIds[i];
                     break;
@@ -87,7 +148,7 @@ namespace ImageSegmentation.Segmentation
         public void AddPixelWithParametersRecalculation(Pixel pixel)
         {
             RegionPixels.Add(pixel);
-            CalculateParameters();
+            CalculateParameters(PixelAction.add, new Pixel[] { pixel });
         }
 
         /// <summary>
@@ -96,7 +157,7 @@ namespace ImageSegmentation.Segmentation
         /// <param name="pixels">Добавляемый к региону массив пикселей</param>
         public void AddPixels(Pixel[] pixels)
         {
-            RegionPixels.AddRange(pixels);                
+            RegionPixels.AddRange(pixels);
         }
 
 
@@ -107,7 +168,7 @@ namespace ImageSegmentation.Segmentation
         public void AddPixelsWithParametersRecalculation(Pixel[] pixels)
         {
             RegionPixels.AddRange(pixels);
-            CalculateParameters();
+            CalculateParameters(PixelAction.add, pixels);
         }
 
         /// <summary>
@@ -142,10 +203,12 @@ namespace ImageSegmentation.Segmentation
                 {
                     removedPixel = RegionPixels[i];
                     RegionPixels.RemoveAt(i);
+                    // удаляем также и из списка расстояний
+                    DistanceSums.RemoveAt(i);
                     break;
                 }
             }
-            CalculateParameters();
+            CalculateParameters(PixelAction.remove, new Pixel[] { removedPixel });
             return removedPixel;
         }
 
@@ -160,22 +223,8 @@ namespace ImageSegmentation.Segmentation
                 removedPixels[i] = RegionPixels[i];
 
             RegionPixels.Clear();
-
-            return removedPixels;
-        }
-
-        /// <summary>
-        /// Удаляет все пиксели региона и пересчитывает праметры региона
-        /// </summary>
-        /// <returns>Массив удаленных пикселей региона</returns>
-        public Pixel[] RemovePixelsWithParametersRecalculation()
-        {
-            Pixel[] removedPixels = new Pixel[RegionPixels.Count];
-            for (int i = 0; i < RegionPixels.Count; i++)
-                removedPixels[i] = RegionPixels[i];
-
-            RegionPixels.Clear();
-            CalculateParameters();
+            // удаляем также список расстояний
+            DistanceSums.Clear();
 
             return removedPixels;
         }
@@ -183,7 +232,7 @@ namespace ImageSegmentation.Segmentation
         /// <summary>
         /// Пересчитывает все параметры для региона на основе параметров пикселей региона
         /// </summary>
-        public void CalculateParameters()
+        public void CalculateParameters(PixelAction action = PixelAction.none, Pixel[] pixels = null)
         {
             if (RegionPixels == null)
                 return;
@@ -200,28 +249,94 @@ namespace ImageSegmentation.Segmentation
                 return;
             }
 
-            // расчет центра региона
-            CalculateCenter();
-
-            // расчет площади региона
-            Area = RegionPixels.Count;
-
-            // расчет среднего значения вектора текстурной характеристики для региона
-            for (int i = 0; i < RegionPixels[0].TextureFeatures.Length; i++)
+            if (action == PixelAction.none)
             {
-                double sum = 0.0;
-                for (int j = 0; j < RegionPixels.Count; j++)
-                    sum += RegionPixels[j].TextureFeatures[i];
-                AverageTextureFeature[i] = sum / (double)RegionPixels.Count;
+                // расчет центра региона
+                CalculateCenter();
+
+                // расчет площади региона
+                Area = RegionPixels.Count;
+
+                // расчет среднего значения вектора текстурной характеристики для региона
+                for (int i = 0; i < RegionPixels[0].TextureFeatures.Length; i++)
+                {
+                    double sum = 0.0;
+                    for (int j = 0; j < RegionPixels.Count; j++)
+                        sum += RegionPixels[j].TextureFeatures[i];
+                    AverageTextureFeature[i] = sum / (double)RegionPixels.Count;
+                }
+
+                // расчет среднего значения вектора интенсивности, полученного после условной фильтрации, для региона
+                for (int i = 0; i < RegionPixels[0].ConditionalIntensityFeatures.Length; i++)
+                {
+                    double sum = 0.0;
+                    for (int j = 0; j < RegionPixels.Count; j++)
+                        sum += RegionPixels[j].ConditionalIntensityFeatures[i];
+                    AverageConditionalIntensityFeature[i] = sum / RegionPixels.Count;
+                }
             }
-
-            // расчет среднего значения вектора интенсивности, полученного после условной фильтрации, для региона
-            for (int i = 0; i < RegionPixels[0].ConditionalIntensityFeatures.Length; i++)
+            else
             {
-                double sum = 0.0;
-                for (int j = 0; j < RegionPixels.Count; j++)
-                    sum += RegionPixels[j].ConditionalIntensityFeatures[i];
-                AverageConditionalIntensityFeature[i] = sum / RegionPixels.Count;
+                if (pixels == null)
+                    return;
+
+                // расчет центра региона
+                CalculateCenter(action, pixels);
+
+                // расчет площади региона
+                Area = RegionPixels.Count;
+
+                // расчет среднего значения вектора текстурной характеристики для региона
+                if (action == PixelAction.add)
+                {
+                    for (int i = 0; i < pixels.Length; i++)
+                    {
+                        for (int j = 0; j < RegionPixels[0].TextureFeatures.Length; j++)
+                        {
+                            AverageTextureFeature[j] = AverageTextureFeature[j] * (RegionPixels.Count - pixels.Length);
+                            AverageTextureFeature[j] = (AverageTextureFeature[j] + pixels[i].TextureFeatures[j]) / RegionPixels.Count;
+                        }
+                    }
+                }
+                if (action == PixelAction.remove)
+                {
+                    for (int i = 0; i < pixels.Length; i++)
+                    {
+                        for (int j = 0; j < RegionPixels[0].TextureFeatures.Length; j++)
+                        {
+                            AverageTextureFeature[j] = AverageTextureFeature[j] * (RegionPixels.Count + pixels.Length);
+                            AverageTextureFeature[j] = (AverageTextureFeature[j] - pixels[i].TextureFeatures[j]) / RegionPixels.Count;
+                        }
+                    }
+                }
+
+                // расчет среднего значения вектора интенсивности, полученного после условной фильтрации, для региона
+                if (action == PixelAction.add)
+                {
+                    for (int i = 0; i < pixels.Length; i++)
+                    {
+                        for (int j = 0; j < RegionPixels[0].ConditionalIntensityFeatures.Length; j++)
+                        {
+                            AverageConditionalIntensityFeature[j] = AverageConditionalIntensityFeature[j] *
+                                (RegionPixels.Count - pixels.Length);
+                            AverageConditionalIntensityFeature[j] =
+                                (AverageConditionalIntensityFeature[j] + pixels[i].ConditionalIntensityFeatures[j]) / RegionPixels.Count;
+                        }
+                    }
+                }
+                if (action == PixelAction.remove)
+                {
+                    for (int i = 0; i < pixels.Length; i++)
+                    {
+                        for (int j = 0; j < RegionPixels[0].ConditionalIntensityFeatures.Length; j++)
+                        {
+                            AverageConditionalIntensityFeature[j] = AverageConditionalIntensityFeature[j] *
+                                (RegionPixels.Count + pixels.Length);
+                            AverageConditionalIntensityFeature[j] =
+                                (AverageConditionalIntensityFeature[j] - pixels[i].ConditionalIntensityFeatures[j]) / RegionPixels.Count;
+                        }
+                    }
+                }
             }
         }
 
