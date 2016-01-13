@@ -131,14 +131,8 @@ namespace ImageSegmentation.Segmentation
 
             // запоминаем полученные текстурные характеристики в каждом пикселе
             for (int i = 0; i < segmentedImage.Regions.Count; i++)
-            {
                 for (int j = 0; j < segmentedImage.Regions[i].RegionPixels.Count; j++)
-                {
-                    int pixelX = segmentedImage.Regions[i].RegionPixels[j].Id[0];
-                    int pixelY = segmentedImage.Regions[i].RegionPixels[j].Id[1];
-                    segmentedImage.Regions[i].RegionPixels[j].TextureFeatures = textureFeatures[(pixelX * segmentedImage.Width) + pixelY];
-                }
-            }
+                    segmentedImage.Regions[i].RegionPixels[j].TextureFeatures = textureFeatures[segmentedImage.Regions[i].RegionPixels[j].GlobalNumber];
         }
 
         /// <summary>
@@ -162,10 +156,8 @@ namespace ImageSegmentation.Segmentation
                 // TODO: Извечь в массивы TextureFeatures и IntencityFeatures
                 for (int j = 0; j < segmentedImage.Regions[i].RegionPixels.Count; j++)
                 {
-                    int pixelX = segmentedImage.Regions[i].RegionPixels[j].Id[0];
-                    int pixelY = segmentedImage.Regions[i].RegionPixels[j].Id[1];
-                    textureFeatures[(pixelX * segmentedImage.Width) + pixelY] = segmentedImage.Regions[i].RegionPixels[j].TextureFeatures;
-                    intencityFeatures[(pixelX * segmentedImage.Width) + pixelY] = segmentedImage.Regions[i].RegionPixels[j].IntensityFeatures;
+                    textureFeatures[segmentedImage.Regions[i].RegionPixels[j].GlobalNumber] = segmentedImage.Regions[i].RegionPixels[j].TextureFeatures;
+                    intencityFeatures[segmentedImage.Regions[i].RegionPixels[j].GlobalNumber] = segmentedImage.Regions[i].RegionPixels[j].IntensityFeatures;
                 }
             }
 

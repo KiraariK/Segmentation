@@ -10,18 +10,22 @@ namespace ImageSegmentation.Segmentation
     public class Pixel
     {
         public int[] Id { get; set; } // Идентификатор пикселя изображения: массив для x и y координаты
+        public int GlobalNumber { get; set; } // Глобальный номер пикселя изображения (номера по строками изображения)
+        public double[] Distances { get; set; } // Массив расстояний до каждого из пикселя изображения, записанных по строкам
         public int[] RgbData { get; set; } // RGB-данные пикселя изображения
         public double[] IntensityFeatures { get; set; } // Lab-данные пикселя изображения
         public double[] ConditionalIntensityFeatures { get; set; } // Характеристики интенсивности, полученные после условной фильтрации
         public double[] TextureFeatures { get; set; } // Текстурные характеристики пикселя
         public bool IsChecked { get; set; } // Флаг отмечающий, был ли проверен пиксель на данной итерации KMCC
 
-        public Pixel(int[] id, int[] rgbData)
+        public Pixel(int[] id, int[] rgbData, int imageWidth, int imageHeight)
         {
             Id = new int[2];
+            Distances = new double[imageWidth * imageHeight];
             RgbData = new int[3];
             for (int i = 0; i < Id.Length; i++)
                 Id[i] = id[i];
+            GlobalNumber = (Id[0] * imageWidth) + Id[1];
             for (int i = 0; i < RgbData.Length; i++)
                 RgbData[i] = rgbData[i];
 
