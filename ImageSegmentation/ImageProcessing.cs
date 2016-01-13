@@ -213,7 +213,18 @@ namespace ImageSegmentation
 
         public static Bitmap EasyResizeImage(Bitmap imgToResize, Size size)
         {
-            return new Bitmap(imgToResize, size);
+            Bitmap bmp = new Bitmap(imgToResize, size);
+            Bitmap targetBmp = bmp.Clone(new Rectangle(0, 0, bmp.Width, bmp.Height), PixelFormat.Format24bppRgb);
+            return targetBmp;
+        }
+
+        public static Image ResizeImageNew(Image image, int new_height, int new_width)
+        {
+            Bitmap new_image = new Bitmap(new_height, new_width);
+            Graphics g = Graphics.FromImage((Image)new_image);
+            g.InterpolationMode = InterpolationMode.High;
+            g.DrawImage(image, 0, 0, new_width, new_height);
+            return new_image;
         }
     }
 }

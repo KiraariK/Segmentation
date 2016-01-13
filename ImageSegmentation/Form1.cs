@@ -32,13 +32,13 @@ namespace ImageSegmentation
             {
                 textBox_imagePath.Text = openFile.FileName;
                 originImage = new Bitmap(openFile.FileName);
-                if(comboBox_ImageSize.Text != @"100")
-                {
+                //if(comboBox_ImageSize.Text != @"100")
+                //{
                     int scaleWidth = (int)(originImage.Width * 0.01 * Int32.Parse(comboBox_ImageSize.Text));
                     int scaleHeight = (int)(originImage.Height * 0.01 * Int32.Parse(comboBox_ImageSize.Text));
                     //originImage = ImageProcessing.ResizeImage(originImage, scaleWidth, scaleHeight);
                     originImage = ImageProcessing.EasyResizeImage(originImage, new Size(scaleWidth, scaleHeight));
-                }
+                //}
                 pictureBox_originImage.Image = originImage;
             }
         }
