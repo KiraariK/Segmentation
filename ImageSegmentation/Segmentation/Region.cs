@@ -72,7 +72,6 @@ namespace ImageSegmentation.Segmentation
                         if (i != j)
                         {
                             // Прибавляем к сумме расстояние от пикселя i до пикселя j
-                            //DistanceSums[i] += RegionPixels[i].Distances[RegionPixels[j].GlobalNumber];
                             DistanceSums[i] += distances[RegionPixels[i].GlobalNumber][RegionPixels[j].GlobalNumber];
                         }
                     }
@@ -89,7 +88,6 @@ namespace ImageSegmentation.Segmentation
                     double sum = 0.0;
                     for (int j = 0; j < RegionPixels.Count; j++)
                         sum += distances[pixels[i].GlobalNumber][RegionPixels[j].GlobalNumber];
-                        //sum += pixels[i].Distances[RegionPixels[j].GlobalNumber];
 
                     DistanceSums.Add(sum);
                 }
@@ -103,7 +101,6 @@ namespace ImageSegmentation.Segmentation
                         if (pixelIds[i][0] == pixels[j].Id[0] && pixelIds[i][1] == pixels[j].Id[1])
                             continue;
 
-                        //DistanceSums[i] += RegionPixels[i].Distances[pixels[j].GlobalNumber];
                         DistanceSums[i] += distances[RegionPixels[i].GlobalNumber][pixels[j].GlobalNumber];
                     }
                 }
@@ -119,7 +116,6 @@ namespace ImageSegmentation.Segmentation
                 for (int i = 0; i < pixels.Length; i++)
                     for (int j = 0; j < RegionPixels.Count; j++)
                         DistanceSums[j] -= distances[pixels[i].GlobalNumber][RegionPixels[j].GlobalNumber];
-                        //DistanceSums[j] -= pixels[i].Distances[RegionPixels[j].GlobalNumber];
             }
             else
                 return;
