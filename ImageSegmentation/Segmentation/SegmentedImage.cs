@@ -11,6 +11,7 @@ namespace ImageSegmentation.Segmentation
     {
         public int Height { get; set; } // Высота изображения
         public int Width { get; set; } // Ширина изображения
+        public double[][] Distances { get; set; } // Матрица расстояний от каждого пикселя до каждого пикселя
         public List<Region> Regions { get; set; } // Список регионов изображения
         public double Dispersion { get; set; } // Величина разброса точек регионов для сегментируемого изображения
 
@@ -25,6 +26,9 @@ namespace ImageSegmentation.Segmentation
         {
             Height = imageHeight;
             Width = imageWidth;
+            Distances = new double[Width * Height][];
+            for (int i = 0; i < Width * Height; i++)
+                Distances[i] = new double[Width * Height];
             Regions = new List<Region>();
 
             // создание начальных регионов размером defaultSegmentSize х defaultSegmentSize
@@ -40,7 +44,7 @@ namespace ImageSegmentation.Segmentation
                         for (int y = 0; y < regionWidth; y++)
                         {
                             int[] pixelId = { i + x, j + y };
-                            pixels[(x * regionWidth) + y] = new Pixel(pixelId, rgbData[((i + x) * imageWidth) + (j + y)], Width, Height);
+                            pixels[(x * regionWidth) + y] = new Pixel(pixelId, rgbData[((i + x) * imageWidth) + (j + y)], Width);
                         }
                     }
                     Region region = new Region(Width, pixels);
@@ -73,10 +77,9 @@ namespace ImageSegmentation.Segmentation
                         (allPixels[i].Id[1] - allPixels[j].Id[1]) * (allPixels[i].Id[1] - allPixels[j].Id[1]));
 
                     // Записываем на соответствующее место найденное расстояние в массив расстояний пикселя i
-                    allPixels[i].Distances[allPixels[j].GlobalNumber] = distance;
+                    Distances[allPixels[i].GlobalNumber][allPixels[j].GlobalNumber] = distance;
                 }
             }
-            // После этого в пикселях регионов будут заполнены массивы Distances, т.к. мы изменяли указатели
         }
 
         /// <summary>

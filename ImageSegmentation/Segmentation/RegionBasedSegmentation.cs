@@ -45,7 +45,7 @@ namespace ImageSegmentation.Segmentation
 
             // выполние рассчета всех параметров регионов после заполнения всех параметров пикселей
             for (int i = 0; i < segmentedImage.Regions.Count; i++)
-                segmentedImage.Regions[i].CalculateParameters();
+                segmentedImage.Regions[i].CalculateParameters(segmentedImage.Distances);
 
             // классификация пикселей на основе KMCC алгоритма
             KMCCClassification(regularizationParameter, ref segmentedImage);
@@ -281,7 +281,8 @@ namespace ImageSegmentation.Segmentation
                                     // удаляем пиксель из текущего региона (регион i) и добавляем его в самый близкий для него регион (регион k)
                                     segmentedImage.Regions[k].AddPixelWithParametersRecalculation(
                                         segmentedImage.Regions[i].RemovePixelWithParametersRecalculation(
-                                        segmentedImage.Regions[i].RegionPixels[j].Id));
+                                        segmentedImage.Regions[i].RegionPixels[j].Id, segmentedImage.Distances),
+                                        segmentedImage.Distances);
 
                                     if (segmentedImage.Regions[i].RegionPixels.Count != 0) // если в регионе еще есть пиксели
                                     {
@@ -382,7 +383,7 @@ namespace ImageSegmentation.Segmentation
                         {
                             // перемещаем пиксели из j-го региона в i-ый регион
                             segmentedImage.Regions[i].AddPixelsWithParametersRecalculation(
-                                segmentedImage.Regions[j].RemovePixels());
+                                segmentedImage.Regions[j].RemovePixels(), segmentedImage.Distances);
 
                             // удаляем пустой регион
                             segmentedImage.Regions.RemoveAt(j);
