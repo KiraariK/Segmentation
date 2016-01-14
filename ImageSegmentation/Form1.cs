@@ -14,7 +14,6 @@ namespace ImageSegmentation
     public partial class MainForm : Form
     {
         Bitmap originImage;
-        Bitmap segmentedImage;
 
         public MainForm()
         {
