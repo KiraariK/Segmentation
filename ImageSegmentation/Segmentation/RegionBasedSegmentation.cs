@@ -44,6 +44,9 @@ namespace ImageSegmentation.Segmentation
             for (int i = 0; i < segmentedImage.Regions.Count; i++)
                 segmentedImage.Regions[i].CalculateParameters();
 
+            //for (int i = 0; i < segmentedImage.Regions.Count; i++)
+            //    segmentedImage.Regions[i].CalculateParameters(segmentedImage.Distances);
+
             // классификация пикселей на основе KMCC алгоритма
             KMCCClassification(regularizationParameter, ref segmentedImage);
 
