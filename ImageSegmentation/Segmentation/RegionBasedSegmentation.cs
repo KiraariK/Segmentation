@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Linq;
 using ImageSegmentation.Characterization;
+using System.Threading.Tasks;
 
 namespace ImageSegmentation.Segmentation
 {
@@ -41,11 +42,10 @@ namespace ImageSegmentation.Segmentation
             PerformConditionalIntencityFiltering(ref segmentedImage);
 
             // выполние рассчета всех параметров регионов после заполнения всех параметров пикселей
-            for (int i = 0; i < segmentedImage.Regions.Count; i++)
-                segmentedImage.Regions[i].CalculateParameters();
-
-            //for (int i = 0; i < segmentedImage.Regions.Count; i++)
-            //    segmentedImage.Regions[i].CalculateParameters(segmentedImage.Distances);
+            Parallel.For(0, segmentedImage.Regions.Count, i =>
+                {
+                    segmentedImage.Regions[i].CalculateParameters();
+                });
 
             // классификация пикселей на основе KMCC алгоритма
             KMCCClassification(regularizationParameter, ref segmentedImage);
@@ -309,8 +309,9 @@ namespace ImageSegmentation.Segmentation
         /// <param name="regularizationParameter">Регуляризационный параметр ламбда, используемый при вычислении геометрического расстояния</param>
         /// <param name="segmentsCount">Требуемое количество регионов</param>
         /// <param name="segmentedImage">Сегментируемое изображение</param>
-        private static void RegionsClassification(double regularizationParameter, int segmentsCount, ref SegmentedImage segmentedImage)
+        private static void RegionsClassification(double regularizationParameter, int segmentsCount, ref SegmentedImage smg)
         {
+            SegmentedImage segmentedImage = smg;
             // цикл объединения регионов продолжается до тех пор, пока не будет получено нужное количество регионов
             while (segmentedImage.Regions.Count > segmentsCount)
             {
@@ -327,10 +328,11 @@ namespace ImageSegmentation.Segmentation
                         distances[j] = 0.0;
 
                     // сравниваем текущий регион со всеми остальными
-                    for (int j = 0; j < segmentedImage.Regions.Count; j++)
+                    //for (int j = 0; j < segmentedImage.Regions.Count; j++)
+                    Parallel.For(0, segmentedImage.Regions.Count, j =>
                     {
-                        if (i == j)
-                            continue; // пропускаем сравнение региона самого с собой
+                        //if (i == j)
+                        //    continue; // пропускаем сравнение региона самого с собой
 
                         // подсчет квадратов разностей элементов векторов условной интенсивности
                         double sum = 0.0;
@@ -369,7 +371,7 @@ namespace ImageSegmentation.Segmentation
                             averageArea += segmentedImage.Regions[k].Area;
                         averageArea /= segmentedImage.Regions.Count;
                         distances[j] += regularizationParameter * (averageArea / segmentedImage.Regions[j].Area) * Math.Sqrt(sum);
-                    }
+                    });
 
                     // определение минимального расстояния и перемещение пикселей регионов
                     double minDistance = distances[0] != 0.0 ? distances[0] : distances[1];
@@ -396,6 +398,7 @@ namespace ImageSegmentation.Segmentation
                         }
                     }
                 }
+                smg = segmentedImage;
             }
         }
     }
