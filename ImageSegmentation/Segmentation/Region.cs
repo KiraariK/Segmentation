@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using ImageSegmentation.Characterization;
 
 namespace ImageSegmentation.Segmentation
@@ -45,7 +43,6 @@ namespace ImageSegmentation.Segmentation
         /// </summary>
         /// <param name="action">Действие выполненной над пикселями региона перед пересчетом центрального пикселя</param>
         /// <param name="pixels">Массив пикселей, который были изменены в регионе перед пересчетом центрального пикселя</param>
-        /// <param name="distances">Матрица расстояний от каждого пикселя до каждого пикселя</param>
         private void CalculateCenter(PixelAction action = PixelAction.none, Pixel[] pixels = null)
         {
             if (RegionPixels == null)
@@ -148,7 +145,6 @@ namespace ImageSegmentation.Segmentation
         /// Добавляет пиксель к региону и пересчитывает параметры региона
         /// </summary>
         /// <param name="pixel">Пиксель, добавляемый к региону</param>
-        /// <param name="distances">Матрица расстояний от каждого пикселя до каждого пикселя</param>
         public void AddPixelWithParametersRecalculation(Pixel pixel)
         {
             RegionPixels.Add(pixel);
@@ -169,7 +165,6 @@ namespace ImageSegmentation.Segmentation
         /// Добавляет массив пикселей к региону и пересчитывает параметры региона
         /// </summary>
         /// <param name="pixels">Добавляемый к региону массив пикселей</param>
-        /// <param name="distances">Матрица расстояний от каждого пикселя до каждого пикселя</param>
         public void AddPixelsWithParametersRecalculation(Pixel[] pixels)
         {
             RegionPixels.AddRange(pixels);
@@ -199,7 +194,6 @@ namespace ImageSegmentation.Segmentation
         /// Удаляет пиксель из региона и пересчитывает параметры региона
         /// </summary>
         /// <param name="pixelId">Идентификатор удаляемого пикселя - массив с координатами i, j</param>
-        /// <param name="distances">Матрица расстояний от каждого пикселя до каждого пикселя</param>
         public Pixel RemovePixelWithParametersRecalculation(int[] pixelId)
         {
             Pixel removedPixel = null;
@@ -240,7 +234,6 @@ namespace ImageSegmentation.Segmentation
         /// </summary>
         /// <param name="action">Действие, которое было произведено над пикселями перед вызовом функции</param>
         /// <param name="pixels">Массив пикселей, над которыми было произведено действие</param>
-        /// <param name="distances">Матрица расстояний от каждого пикселя до каждого пикселя</param>
         public void CalculateParameters(PixelAction action = PixelAction.none, Pixel[] pixels = null)
         {
             if (RegionPixels == null)
