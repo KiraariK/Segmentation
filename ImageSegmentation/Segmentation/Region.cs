@@ -83,29 +83,28 @@ namespace ImageSegmentation.Segmentation
                 if (pixels == null)
                     return;
 
-                // Добавляем новые элементы списка расстояний для новых пикселей
+                // Добавляем новые элементы списка расстояний для новых пикселей и добавляем к уже существующим суммам новые расстояния
+                int oldDistancesSumsCount = DistanceSums.Count; // Фиксируем количество пикселей, которые были в регионе до добавления
                 for (int i = 0; i < pixels.Length; i++)
                 {
+                    int oldDistancesIterator = 0;
                     double sum = 0.0;
                     for (int j = 0; j < RegionPixels.Count; j++)
-                        sum += Math.Sqrt((pixels[i].Id[0] - pixelIds[j][0]) * (pixels[i].Id[0] - pixelIds[j][0]) +
+                    {
+                        double distance = Math.Sqrt((pixels[i].Id[0] - pixelIds[j][0]) * (pixels[i].Id[0] - pixelIds[j][0]) +
                             (pixels[i].Id[1] - pixelIds[j][1]) * (pixels[i].Id[1] - pixelIds[j][1]));
 
-                    DistanceSums.Add(sum);
-                }
+                        sum += distance;
 
-                // Прибавляем к расстояниям для пикселей, которые ранее присутствовали в регионе, расстояния до новых пикселей
-                for (int i = 0; i < RegionPixels.Count; i++)
-                {
-                    for (int j = 0; j < pixels.Length; j++)
-                    {
-                        // Пропускаем только что добавленные пиксели (для них нужные расстояния уже посчитаны)
-                        if (pixelIds[i][0] == pixels[j].Id[0] && pixelIds[i][1] == pixels[j].Id[1])
-                            continue;
+                        // Если текущий пиксель относится еще к старым пикселям региона
+                        if (oldDistancesIterator < oldDistancesSumsCount)
+                            DistanceSums[j] += distance;
 
-                        DistanceSums[i] += Math.Sqrt((pixelIds[i][0] - pixels[j].Id[0]) * (pixelIds[i][0] - pixels[j].Id[0]) +
-                            (pixelIds[i][1] - pixels[j].Id[1]) * (pixelIds[i][1] - pixels[j].Id[1]));
+                        // Увеличиваем счетчик просмотренных пикселей
+                        oldDistancesIterator++;
                     }
+
+                    DistanceSums.Add(sum);
                 }
             }
             else if (action == PixelAction.remove)
