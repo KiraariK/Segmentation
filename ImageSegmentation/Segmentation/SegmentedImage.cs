@@ -11,7 +11,6 @@ namespace ImageSegmentation.Segmentation
     {
         public int Height { get; set; } // Высота изображения
         public int Width { get; set; } // Ширина изображения
-        public double[][] Distances { get; set; } // Матрица расстояний от каждого пикселя до каждого пикселя
         public List<Region> Regions { get; set; } // Список регионов изображения
         public double Dispersion { get; set; } // Величина разброса точек регионов для сегментируемого изображения
 
@@ -26,9 +25,6 @@ namespace ImageSegmentation.Segmentation
         {
             Height = imageHeight;
             Width = imageWidth;
-            Distances = new double[Width * Height][];
-            for (int i = 0; i < Width * Height; i++)
-                Distances[i] = new double[Width * Height];
             Regions = new List<Region>();
 
             // создание начальных регионов размером defaultSegmentSize х defaultSegmentSize
@@ -49,35 +45,6 @@ namespace ImageSegmentation.Segmentation
                     }
                     Region region = new Region(Width, pixels);
                     Regions.Add(region);
-                }
-            }
-
-            // Заполнение массивов расстояний до пикселей изображения (для каждого пикселя)
-            // Получение массива всех пикселей
-            Pixel[] allPixels = new Pixel[Width * Height];
-            int iterator = 0;
-            for (int i = 0; i < Regions.Count; i++)
-            {
-                for (int j = 0; j < Regions[i].RegionPixels.Count; j++)
-                {
-                    allPixels[iterator] = Regions[i].RegionPixels[j];
-                    iterator++;
-                }
-            }
-
-            for (int i = 0; i < allPixels.Length; i++)
-            {
-                for (int j = 0; j < allPixels.Length; j++)
-                {
-                    if (i == j)
-                        continue;
-
-                    // Считаем расстояние от пикселя i до пикселя j
-                    double distance = Math.Sqrt((allPixels[i].Id[0] - allPixels[j].Id[0]) * (allPixels[i].Id[0] - allPixels[j].Id[0]) +
-                        (allPixels[i].Id[1] - allPixels[j].Id[1]) * (allPixels[i].Id[1] - allPixels[j].Id[1]));
-
-                    // Записываем на соответствующее место найденное расстояние в массив расстояний пикселя i
-                    Distances[allPixels[i].GlobalNumber][allPixels[j].GlobalNumber] = distance;
                 }
             }
         }

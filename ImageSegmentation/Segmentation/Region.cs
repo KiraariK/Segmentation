@@ -46,7 +46,7 @@ namespace ImageSegmentation.Segmentation
         /// <param name="action">Действие выполненной над пикселями региона перед пересчетом центрального пикселя</param>
         /// <param name="pixels">Массив пикселей, который были изменены в регионе перед пересчетом центрального пикселя</param>
         /// <param name="distances">Матрица расстояний от каждого пикселя до каждого пикселя</param>
-        private void CalculateCenter(double[][] distances, PixelAction action = PixelAction.none, Pixel[] pixels = null)
+        private void CalculateCenter(PixelAction action = PixelAction.none, Pixel[] pixels = null)
         {
             if (RegionPixels == null)
                 return;
@@ -65,14 +65,15 @@ namespace ImageSegmentation.Segmentation
 
                 // Ищем суммы расстояний от каждой точки до каждой точки региона
                 for (int i = 0; i < RegionPixels.Count; i++)
-                {                    
+                {
                     // Считаем сумму расстояний от точки i до всех остальных точек
                     for (int j = 0; j < RegionPixels.Count; j++)
                     {
                         if (i != j)
                         {
                             // Прибавляем к сумме расстояние от пикселя i до пикселя j
-                            DistanceSums[i] += distances[RegionPixels[i].GlobalNumber][RegionPixels[j].GlobalNumber];
+                            DistanceSums[i] += Math.Sqrt((pixelIds[i][0] - pixelIds[j][0]) * (pixelIds[i][0] - pixelIds[j][0]) +
+                                (pixelIds[i][1] - pixelIds[j][1]) * (pixelIds[i][1] - pixelIds[j][1]));
                         }
                     }
                 }
@@ -87,7 +88,8 @@ namespace ImageSegmentation.Segmentation
                 {
                     double sum = 0.0;
                     for (int j = 0; j < RegionPixels.Count; j++)
-                        sum += distances[pixels[i].GlobalNumber][RegionPixels[j].GlobalNumber];
+                        sum += Math.Sqrt((pixels[i].Id[0] - pixelIds[j][0]) * (pixels[i].Id[0] - pixelIds[j][0]) +
+                            (pixels[i].Id[1] - pixelIds[j][1]) * (pixels[i].Id[1] - pixelIds[j][1]));
 
                     DistanceSums.Add(sum);
                 }
@@ -101,7 +103,8 @@ namespace ImageSegmentation.Segmentation
                         if (pixelIds[i][0] == pixels[j].Id[0] && pixelIds[i][1] == pixels[j].Id[1])
                             continue;
 
-                        DistanceSums[i] += distances[RegionPixels[i].GlobalNumber][pixels[j].GlobalNumber];
+                        DistanceSums[i] += Math.Sqrt((pixelIds[i][0] - pixels[j].Id[0]) * (pixelIds[i][0] - pixels[j].Id[0]) +
+                            (pixelIds[i][1] - pixels[j].Id[1]) * (pixelIds[i][1] - pixels[j].Id[1]));
                     }
                 }
             }
@@ -115,7 +118,8 @@ namespace ImageSegmentation.Segmentation
                 // Уменьшаем суммы расстояний оставшихся пикселей на величины расстояний до удаленных пикселей
                 for (int i = 0; i < pixels.Length; i++)
                     for (int j = 0; j < RegionPixels.Count; j++)
-                        DistanceSums[j] -= distances[pixels[i].GlobalNumber][RegionPixels[j].GlobalNumber];
+                        DistanceSums[j] -= Math.Sqrt((pixels[i].Id[0] - pixelIds[j][0]) * (pixels[i].Id[0] - pixelIds[j][0]) +
+                            (pixels[i].Id[1] - pixelIds[j][1]) * (pixels[i].Id[1] - pixelIds[j][1]));
             }
             else
                 return;
@@ -146,10 +150,10 @@ namespace ImageSegmentation.Segmentation
         /// </summary>
         /// <param name="pixel">Пиксель, добавляемый к региону</param>
         /// <param name="distances">Матрица расстояний от каждого пикселя до каждого пикселя</param>
-        public void AddPixelWithParametersRecalculation(Pixel pixel, double[][] distances)
+        public void AddPixelWithParametersRecalculation(Pixel pixel)
         {
             RegionPixels.Add(pixel);
-            CalculateParameters(distances, PixelAction.add, new Pixel[] { pixel });
+            CalculateParameters(PixelAction.add, new Pixel[] { pixel });
         }
 
         /// <summary>
@@ -167,10 +171,10 @@ namespace ImageSegmentation.Segmentation
         /// </summary>
         /// <param name="pixels">Добавляемый к региону массив пикселей</param>
         /// <param name="distances">Матрица расстояний от каждого пикселя до каждого пикселя</param>
-        public void AddPixelsWithParametersRecalculation(Pixel[] pixels, double[][] distances)
+        public void AddPixelsWithParametersRecalculation(Pixel[] pixels)
         {
             RegionPixels.AddRange(pixels);
-            CalculateParameters(distances, PixelAction.add, pixels);
+            CalculateParameters(PixelAction.add, pixels);
         }
 
         /// <summary>
@@ -197,7 +201,7 @@ namespace ImageSegmentation.Segmentation
         /// </summary>
         /// <param name="pixelId">Идентификатор удаляемого пикселя - массив с координатами i, j</param>
         /// <param name="distances">Матрица расстояний от каждого пикселя до каждого пикселя</param>
-        public Pixel RemovePixelWithParametersRecalculation(int[] pixelId, double[][] distances)
+        public Pixel RemovePixelWithParametersRecalculation(int[] pixelId)
         {
             Pixel removedPixel = null;
             for (int i = 0; i < RegionPixels.Count; i++)
@@ -211,7 +215,7 @@ namespace ImageSegmentation.Segmentation
                     break;
                 }
             }
-            CalculateParameters(distances, PixelAction.remove, new Pixel[] { removedPixel });
+            CalculateParameters(PixelAction.remove, new Pixel[] { removedPixel });
             return removedPixel;
         }
 
@@ -238,7 +242,7 @@ namespace ImageSegmentation.Segmentation
         /// <param name="action">Действие, которое было произведено над пикселями перед вызовом функции</param>
         /// <param name="pixels">Массив пикселей, над которыми было произведено действие</param>
         /// <param name="distances">Матрица расстояний от каждого пикселя до каждого пикселя</param>
-        public void CalculateParameters(double[][] distances, PixelAction action = PixelAction.none, Pixel[] pixels = null)
+        public void CalculateParameters(PixelAction action = PixelAction.none, Pixel[] pixels = null)
         {
             if (RegionPixels == null)
                 return;
@@ -258,7 +262,7 @@ namespace ImageSegmentation.Segmentation
             if (action == PixelAction.none)
             {
                 // расчет центра региона
-                CalculateCenter(distances);
+                CalculateCenter();
 
                 // расчет площади региона
                 Area = RegionPixels.Count;
@@ -289,7 +293,7 @@ namespace ImageSegmentation.Segmentation
                     return;
 
                 // расчет центра региона
-                CalculateCenter(distances, action, pixels);
+                CalculateCenter(action, pixels);
 
                 // расчет площади региона
                 Area = RegionPixels.Count;
@@ -319,7 +323,7 @@ namespace ImageSegmentation.Segmentation
                 {
                     for (int i = 0; i < pixels.Length; i++)
                         for (int j = 0; j < RegionPixels[0].ConditionalIntensityFeatures.Length; j++)
-                            ConditionalIntensityFeatureSums[j] += pixels[i].ConditionalIntensityFeatures[j]; 
+                            ConditionalIntensityFeatureSums[j] += pixels[i].ConditionalIntensityFeatures[j];
 
                     for (int i = 0; i < RegionPixels[0].ConditionalIntensityFeatures.Length; i++)
                         AverageConditionalIntensityFeature[i] = ConditionalIntensityFeatureSums[i] / RegionPixels.Count;
