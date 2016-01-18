@@ -18,8 +18,6 @@ namespace ImageSegmentation.Segmentation
         public double[] ConditionalIntensityFeatureSums { get; set; } // Суммы условных характеристик по каждому пикселю региона
         public double Dispersion { get; set; } // Величина разброса точек региона
 
-        public int ImageWidth { get; set; } // Ширина изображения необходима для преобразования координат пикселей региона
-
         public Region(int imageWidth, Pixel[] pixels)
         {
             SpacialSenterId = new int[2];
@@ -32,8 +30,6 @@ namespace ImageSegmentation.Segmentation
             TextureFeatureSums = new double[TextureFeaturesProcessing.numOfFeatures * TextureFeaturesProcessing.colorsCount];
             AverageConditionalIntensityFeature = new double[3];
             ConditionalIntensityFeatureSums = new double[3];
-
-            ImageWidth = imageWidth;
 
             Dispersion = 0.0;
         }

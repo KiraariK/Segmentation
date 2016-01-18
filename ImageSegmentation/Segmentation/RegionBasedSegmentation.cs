@@ -222,6 +222,8 @@ namespace ImageSegmentation.Segmentation
                         double[] distances = new double[segmentedImage.Regions.Count];
                         for (int k = 0; k < segmentedImage.Regions.Count; k++)
                         {
+                            // TODO: пропускать те регионы, с которыми не соседствует регион, в котором в данный момент находится пиксель
+
                             // подсчет квадратов разностей элементов векторов условной интенсивности
                             double sum = 0.0;
                             for (int z = 0; z < segmentedImage.Regions[k].RegionPixels[0].ConditionalIntensityFeatures.Length; z++)
