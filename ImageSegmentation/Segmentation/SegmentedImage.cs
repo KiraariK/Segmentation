@@ -43,6 +43,21 @@ namespace ImageSegmentation.Segmentation
                     Regions.Add(region);
                 }
             }
+            //for (int i = 0; i < allPixels.Length; i++)
+            //{
+            //    for (int j = 0; j < allPixels.Length; j++)
+            //    {
+            //        if (i == j)
+            //            continue;
+
+            //        // Считаем расстояние от пикселя i до пикселя j
+            //        double distance = Math.Sqrt((allPixels[i].Id[0] - allPixels[j].Id[0]) * (allPixels[i].Id[0] - allPixels[j].Id[0]) +
+            //            (allPixels[i].Id[1] - allPixels[j].Id[1]) * (allPixels[i].Id[1] - allPixels[j].Id[1]));
+
+            //        // Записываем на соответствующее место найденное расстояние в массив расстояний пикселя i
+            //        Distances[allPixels[i].GlobalNumber][allPixels[j].GlobalNumber] = distance;
+            //    }
+            //}
         }
 
         /// <summary>
