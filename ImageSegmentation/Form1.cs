@@ -40,13 +40,30 @@ namespace ImageSegmentation
 
         private void button_doSegmentation_Click(object sender, EventArgs e)
         {
+            System.Diagnostics.Stopwatch swatch = new System.Diagnostics.Stopwatch();
+            swatch.Start();
+
             SegmentedImage segmentedImage = RegionBasedSegmentation.PerformSegmentation(originImage);
+
+            swatch.Stop();
+            toolStripStatusLabel1.Text = swatch.Elapsed.ToString();
 
             segmentedImage.AverageRegionPixelsColor();
 
             pictureBox_segmentedImage.Image = segmentedImage.GetBitmapFromSegments();
 
-            toolStripStatusLabel1.Text = segmentedImage.Dispersion.ToString();
+            //toolStripStatusLabel1.Text = segmentedImage.Dispersion.ToString();
+        }
+
+        private void button_saveResult_Click(object sender, EventArgs e)
+        {
+            saveFileDialog.Filter = "Bitmap files (*.bmp)|*.bmp|All files (*.*)|*.*";
+            saveFileDialog.FilterIndex = 2;
+            saveFileDialog.RestoreDirectory = true;
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                pictureBox_segmentedImage.Image.Save(saveFileDialog.FileName);
+            }
         }
     }
 }
