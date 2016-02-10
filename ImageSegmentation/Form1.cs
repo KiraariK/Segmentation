@@ -57,7 +57,7 @@ namespace ImageSegmentation
 
         private void button_saveResult_Click(object sender, EventArgs e)
         {
-            saveFileDialog.Filter = "Bitmap files (*.bmp)|*.bmp|All files (*.*)|*.*";
+            saveFileDialog.Filter = "Bitmap files (*.bmp)|*.bmp";
             saveFileDialog.FilterIndex = 2;
             saveFileDialog.RestoreDirectory = true;
             if (saveFileDialog.ShowDialog() == DialogResult.OK)

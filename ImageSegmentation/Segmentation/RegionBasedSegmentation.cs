@@ -9,9 +9,9 @@ namespace ImageSegmentation.Segmentation
     public class RegionBasedSegmentation
     {
         public static int defaultSegmentSize = 5; // размер начального квадратного сегмента по умолчанию
-        public static int defaultSegmentsCount = 200; // максимальное количество начальных квадратных сегментов изображения
+        public static int defaultSegmentsCount = 400; // максимальное количество начальных квадратных сегментов изображения
         public static double regularizationParameter = 1.0; // регуляризационный параметр для рассчета геометрической близости
-        public static int requiredSegmentsCount = 15; // требуемое количество регионов
+        public static int requiredSegmentsCount = 9; // требуемое количество регионов
 
         public static SegmentedImage PerformSegmentation(Bitmap image)
         {
