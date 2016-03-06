@@ -10,6 +10,7 @@ namespace ImageSegmentation.Segmentation
         public double[] IntensityFeatures { get; set; } // Lab-данные пикселя изображения
         public double[] ConditionalIntensityFeatures { get; set; } // Характеристики интенсивности, полученные после условной фильтрации
         public double[] TextureFeatures { get; set; } // Текстурные характеристики пикселя
+        public bool isNeighboring { get; set; } // Флаг показывающий, является ли данный пиксель граничным в сегменте
         public bool IsChecked { get; set; } // Флаг отмечающий, был ли проверен пиксель на данной итерации KMCC
 
         public Pixel(int[] id, int[] rgbData, int imageWidth)
@@ -25,6 +26,8 @@ namespace ImageSegmentation.Segmentation
             IntensityFeatures = new double[3];
             ConditionalIntensityFeatures = new double[3];
             TextureFeatures = new double[TextureFeaturesProcessing.numOfFeatures * TextureFeaturesProcessing.colorsCount];
+
+            isNeighboring = false;
         }
     }
 }

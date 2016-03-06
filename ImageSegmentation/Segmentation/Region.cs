@@ -10,6 +10,7 @@ namespace ImageSegmentation.Segmentation
         public enum PixelAction { none, remove, add } // Перечисление, необходимое для обозначения действия над пикселями
         public List<Pixel> RegionPixels { get; set; } // Список пикселей данного региона
         public List<double> DistanceSums { get; set; } // Список сумм расстояний от пикселя до всех остальных пикселей региона
+        public List<int> Neighbors { get; set; } // Список индексов соседних регионов
         public int[] SpacialSenterId { get; set; } // Идентификатор пикслея, являющегося центром региона
         public int Area { get; set; } // Пложадь региона
         public double[] AverageTextureFeature { get; set; } // Среднее значение текстурных характеристик региона
@@ -22,6 +23,7 @@ namespace ImageSegmentation.Segmentation
         {
             SpacialSenterId = new int[2];
             RegionPixels = new List<Pixel>();
+            Neighbors = new List<int>();
             for (int i = 0; i < pixels.Length; i++)
                 RegionPixels.Add(pixels[i]);
 
@@ -326,6 +328,20 @@ namespace ImageSegmentation.Segmentation
                         AverageConditionalIntensityFeature[i] = ConditionalIntensityFeatureSums[i] / RegionPixels.Count;
                 }
             }
+        }
+
+        /// <summary>
+        /// Проверяет, есть ли в данном регионе пиксель с заданным Id
+        /// </summary>
+        /// <param name="pixelId">Id пикселя</param>
+        /// <returns>true, если пиксель есть в регионе, false, если его нет</returns>
+        public bool isPixelInRegion(int[] pixelId)
+        {
+            var pixel = RegionPixels.Find(x => x.Id[0] == pixelId[0] && x.Id[1] == pixelId[1]);
+            if (pixel != null)
+                return true;
+            else
+                return false;
         }
 
         /// <summary>

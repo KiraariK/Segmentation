@@ -11,7 +11,7 @@ namespace ImageSegmentation.Segmentation
         public static int defaultSegmentSize = 5; // размер начального квадратного сегмента по умолчанию
         public static int defaultSegmentsCount = 400; // максимальное количество начальных квадратных сегментов изображения
         public static double regularizationParameter = 1.0; // регуляризационный параметр для рассчета геометрической близости
-        public static int requiredSegmentsCount = 9; // требуемое количество регионов
+        public static int requiredSegmentsCount = 5; // требуемое количество регионов
 
         public static SegmentedImage PerformSegmentation(Bitmap image)
         {
@@ -401,6 +401,66 @@ namespace ImageSegmentation.Segmentation
                     }
                 }
                 smg = segmentedImage;
+            }
+        }
+
+        /// <summary>
+        /// Заполняет списки id соседних регионов для каждого региона, помечает пиксели, как граничные или неграничные
+        /// </summary>
+        /// <param name="segmentedImage">Сегментируемое изображение</param>
+        private static void CalculateNeighborhood(ref SegmentedImage segmentedImage)
+        {
+            for (int i = 0; i < segmentedImage.Regions.Count; i++)
+            {
+                for (int j = 0; j < segmentedImage.Regions[i].RegionPixels.Count; j++)
+                {
+                    int[] pixelId = segmentedImage.Regions[i].RegionPixels[j].Id;
+
+                    bool isNeighboring = false;
+                    // проверяем 8-ми связную окрестность пикселя
+                    for (int x = pixelId[0] - 1; x <= pixelId[0] + 1; x++)
+                    {
+                        for (int y = pixelId[1] - 1; y <= pixelId[1] + 1; y++)
+                        {
+                            // пропускаем пиксель, если такого нет
+                            if (x < 0 || x > segmentedImage.Height || y < 0 || y > segmentedImage.Width)
+                                continue;
+
+                            // пропускаем сравнение пикселя с самим собой
+                            if (x == pixelId[0] && y == pixelId[1])
+                                continue;
+
+                            // если в текущем регионе пикселя нет
+                            if (!segmentedImage.Regions[i].isPixelInRegion(new int[] { x, y }))
+                            {
+                                // говорим, что пиксель должен быть граничным
+                                isNeighboring = true;
+
+                                // ищем в других регионах
+                                for (int z = 0; z < segmentedImage.Regions.Count; z++)
+                                {
+                                    // пропускаем текущий регион
+                                    if (segmentedImage.Regions[z].SpacialSenterId == segmentedImage.Regions[i].SpacialSenterId)
+                                        continue;
+
+                                    // когда нашли регион, которму принадлежит пиксель
+                                    if (segmentedImage.Regions[z].isPixelInRegion(new int[] { x, y }))
+                                    {
+                                        // Добавляем индекс региона в список соседних регионов текущего региона
+                                        if (segmentedImage.Regions[i].Neighbors.IndexOf(z) == -1)
+                                            segmentedImage.Regions[i].Neighbors.Add(z);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // помечаем пиксель, как граничный или неграничный
+                    if (!isNeighboring)
+                        segmentedImage.Regions[i].RegionPixels[j].isNeighboring = false;
+                    else
+                        segmentedImage.Regions[i].RegionPixels[j].isNeighboring = true;
+                }
             }
         }
     }
