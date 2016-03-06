@@ -19,7 +19,22 @@ namespace ImageSegmentation.Segmentation
         public double[] ConditionalIntensityFeatureSums { get; set; } // Суммы условных характеристик по каждому пикселю региона
         public double Dispersion { get; set; } // Величина разброса точек региона
 
-        public Region(int imageWidth, Pixel[] pixels)
+        public Region()
+        {
+            SpacialSenterId = new int[2];
+            RegionPixels = new List<Pixel>();
+            Neighbors = new List<int>();
+
+            Area = 0;
+            AverageTextureFeature = new double[TextureFeaturesProcessing.numOfFeatures * TextureFeaturesProcessing.colorsCount];
+            TextureFeatureSums = new double[TextureFeaturesProcessing.numOfFeatures * TextureFeaturesProcessing.colorsCount];
+            AverageConditionalIntensityFeature = new double[3];
+            ConditionalIntensityFeatureSums = new double[3];
+
+            Dispersion = 0.0;
+        }
+
+        public Region(Pixel[] pixels)
         {
             SpacialSenterId = new int[2];
             RegionPixels = new List<Pixel>();
@@ -342,6 +357,41 @@ namespace ImageSegmentation.Segmentation
                 return true;
             else
                 return false;
+        }
+
+        /// <summary>
+        /// Проверяет, находится ли пиксель с заданным Id в окрестностях пикселей данного региона
+        /// </summary>
+        /// <param name="pixelId">Id пикселя</param>
+        /// <param name="imageHeight">Высота исходного изображения</param>
+        /// <param name="imageWidth">Ширина исходного изображения</param>
+        /// <returns>true, если пиксель в окрестности, false, если пикселя нет в окрестности</returns>
+        public bool isPixelInNeighborhood(int[] pixelId,  int imageHeight, int imageWidth)
+        {
+            bool isFound = false;
+
+            // проверяем принадлежгность данному региону для пикселей из окрестности текущего пикселя
+            for (int x = pixelId[0] - 1; x <= pixelId[0] + 1; x++)
+            {
+                for (int y = pixelId[1] - 1; y <= pixelId[1] + 1; y++)
+                {
+                    // пропускаем пиксель, если такого нет
+                    if (x < 0 || x > imageHeight || y < 0 || y > imageWidth)
+                        continue;
+
+                    // пропускаем сравнение пикселя с самим собой
+                    if (x == pixelId[0] && y == pixelId[1])
+                        continue;
+
+                    for (int i = 0; i < RegionPixels.Count; i++)
+                    {
+                        if (isPixelInRegion(new int[] { x, y }))
+                            isFound = true;
+                    }
+                }
+            }
+
+            return isFound;
         }
 
         /// <summary>

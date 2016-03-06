@@ -39,7 +39,7 @@ namespace ImageSegmentation.Segmentation
                             pixels[(x * regionWidth) + y] = new Pixel(pixelId, rgbData[((i + x) * imageWidth) + (j + y)], Width);
                         }
                     }
-                    Region region = new Region(Width, pixels);
+                    Region region = new Region(pixels);
                     Regions.Add(region);
                 }
             }
@@ -96,16 +96,31 @@ namespace ImageSegmentation.Segmentation
         /// Создает изображение из сегментов
         /// </summary>
         /// <returns>24-х битное изображение типа Bitmap</returns>
-        public Bitmap GetBitmapFromSegments()
+        public Bitmap GetBitmapFromSegments(bool highlightBorders = false)
         {
             int pixelCount = Height * Width;
             int[][] colorData = new int[pixelCount][];
             for (int i = 0; i < pixelCount; i++)
                 colorData[i] = new int[3];
-
-            for (int i = 0; i < Regions.Count; i++)
-                for (int j = 0; j < Regions[i].RegionPixels.Count; j++)
-                    colorData[Regions[i].RegionPixels[j].GlobalNumber] = Regions[i].RegionPixels[j].RgbData;
+            if (!highlightBorders)
+            {
+                for (int i = 0; i < Regions.Count; i++)
+                    for (int j = 0; j < Regions[i].RegionPixels.Count; j++)
+                        colorData[Regions[i].RegionPixels[j].GlobalNumber] = Regions[i].RegionPixels[j].RgbData;
+            }
+            else
+            {
+                for (int i = 0; i < Regions.Count; i++)
+                {
+                    for (int j = 0; j < Regions[i].RegionPixels.Count; j++)
+                    {
+                        if (Regions[i].RegionPixels[j].isNeighboring)
+                            colorData[Regions[i].RegionPixels[j].GlobalNumber] = new int[] { 0, 0, 0 };
+                        else
+                            colorData[Regions[i].RegionPixels[j].GlobalNumber] = Regions[i].RegionPixels[j].RgbData;
+                    }
+                }
+            }
 
             return ImageProcessing.ExportImage(colorData, Height, Width);
         }

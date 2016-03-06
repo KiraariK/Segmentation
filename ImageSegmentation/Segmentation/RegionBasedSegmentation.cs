@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Linq;
 using ImageSegmentation.Characterization;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace ImageSegmentation.Segmentation
 {
@@ -52,6 +53,13 @@ namespace ImageSegmentation.Segmentation
 
             // объединение полученных регионов
             RegionsClassification(regularizationParameter, requiredSegmentsCount, ref segmentedImage);
+
+            // отделение пространственно разделенных частей регионов
+            SplitRegions(ref segmentedImage);
+            // TODO: в новых регионах нет сведений о средних характеристиках регионов, их нужно пересчитать, если понадобится!
+
+            // определение соседства регионов
+            CalculateNeighborhood(ref segmentedImage);
 
             // Подсчет разброса точек регионов для сегментированного изображения
             //segmentedImage.CalculateDispersion(requiredSegmentsCount);
@@ -402,6 +410,69 @@ namespace ImageSegmentation.Segmentation
                 }
                 smg = segmentedImage;
             }
+        }
+
+        /// <summary>
+        /// Делит регионы по пространственному признаку (если регион состоит из не соединенных фрагментов) на несколько регионов
+        /// </summary>
+        /// <param name="segmentedImage">Сегментированное изображение</param>
+        public static void SplitRegions(ref SegmentedImage segmentedImage)
+        {
+            List<Region> newSegmentedImageRegions = new List<Region>();
+
+            int imageWidth = segmentedImage.Width;
+            for (int i = 0; i < segmentedImage.Regions.Count; i++)
+            {
+                // производим сортировку пикселей региона по порядковому номеру пикселя, получаемому по id региона
+                segmentedImage.Regions[i].RegionPixels.Sort(delegate (Pixel a, Pixel b)
+                {
+                    int numberA = (a.Id[0] * imageWidth) + a.Id[1];
+                    int numberB = (b.Id[0] * imageWidth) + b.Id[1];
+                    return numberA.CompareTo(numberB);
+                });
+
+                // объявляем новый список регионов, которые будут получены из текущего региона
+                List<Region> newRegions = new List<Region>();
+                Region firstRegion = new Region();
+                firstRegion.RegionPixels.Add(segmentedImage.Regions[i].RegionPixels[0]);
+                newRegions.Add(firstRegion);
+                for (int j = 1; j < segmentedImage.Regions[i].RegionPixels.Count; j++)
+                {
+                    bool isPartOfExistingRegion = false;
+                    for (int z = 0; z < newRegions.Count; z++)
+                    {
+                        int x = segmentedImage.Regions[i].RegionPixels[j].Id[0];
+                        int y = segmentedImage.Regions[i].RegionPixels[j].Id[1];
+                        if (newRegions[z].isPixelInNeighborhood(new int[] { x, y }, segmentedImage.Height, segmentedImage.Width))
+                        {
+                            isPartOfExistingRegion = true;
+                            newRegions[z].RegionPixels.Add(segmentedImage.Regions[i].RegionPixels[j]);
+                            break;
+                        }
+                    }
+
+                    // если пиксель не находится в окрестности ни одного из известных регионов
+                    if (!isPartOfExistingRegion)
+                    {
+                        // создаем новые регион
+                        Region region = new Region();
+                        // добавляем пиксель к новому региону
+                        region.RegionPixels.Add(segmentedImage.Regions[i].RegionPixels[j]);
+                        // добавляем новый регион в список
+                        newRegions.Add(region);
+                    }
+                }
+
+                // добавляем новые регионы, полученные вместо i-го региона к новому списку регионов
+                for (int j = 0; j < newRegions.Count; j++)
+                    newSegmentedImageRegions.Add(newRegions[j]);
+            }
+
+            // мы получили новый список регионов сегментированного изображения, но без средних для региона характеристик (их можно посчитать)
+            // заменяем существующие регионы изображения новыми только что полученными
+            segmentedImage.Regions.Clear();
+            for (int i = 0; i < newSegmentedImageRegions.Count; i++)
+                segmentedImage.Regions.Add(newSegmentedImageRegions[i]);
         }
 
         /// <summary>
