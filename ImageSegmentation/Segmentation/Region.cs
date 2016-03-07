@@ -10,7 +10,7 @@ namespace ImageSegmentation.Segmentation
         public enum PixelAction { none, remove, add } // Перечисление, необходимое для обозначения действия над пикселями
         public List<Pixel> RegionPixels { get; set; } // Список пикселей данного региона
         public List<double> DistanceSums { get; set; } // Список сумм расстояний от пикселя до всех остальных пикселей региона
-        public List<int> Neighbors { get; set; } // Список индексов соседних регионов
+        public List<Region> Neighbors { get; set; } // Список индексов соседних регионов
         public int[] SpacialSenterId { get; set; } // Идентификатор пикслея, являющегося центром региона
         public int Area { get; set; } // Пложадь региона
         public double[] AverageTextureFeature { get; set; } // Среднее значение текстурных характеристик региона
@@ -23,7 +23,7 @@ namespace ImageSegmentation.Segmentation
         {
             SpacialSenterId = new int[2];
             RegionPixels = new List<Pixel>();
-            Neighbors = new List<int>();
+            Neighbors = new List<Region>();
 
             Area = 0;
             AverageTextureFeature = new double[TextureFeaturesProcessing.numOfFeatures * TextureFeaturesProcessing.colorsCount];
@@ -38,7 +38,7 @@ namespace ImageSegmentation.Segmentation
         {
             SpacialSenterId = new int[2];
             RegionPixels = new List<Pixel>();
-            Neighbors = new List<int>();
+            Neighbors = new List<Region>();
             for (int i = 0; i < pixels.Length; i++)
                 RegionPixels.Add(pixels[i]);
 
