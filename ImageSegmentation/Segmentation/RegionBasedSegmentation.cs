@@ -13,7 +13,7 @@ namespace ImageSegmentation.Segmentation
         public static int defaultSegmentsCount = 400; // максимальное количество начальных квадратных сегментов изображения
         public static double regularizationParameter = 1.0; // регуляризационный параметр для рассчета геометрической близости
         public static int requiredSegmentsCount = 5; // требуемое количество регионов
-        public static double lowThresholdForRegionSize = 0.15; // минимальный размер сегмента в долях от размера изображения
+        public static double lowThresholdForRegionSize = 0.1; // минимальный размер сегмента в долях от размера изображения
 
         public static SegmentedImage PerformSegmentation(Bitmap image)
         {
@@ -454,6 +454,8 @@ namespace ImageSegmentation.Segmentation
                     {
                         int x = segmentedImage.Regions[i].RegionPixels[j].Id[0];
                         int y = segmentedImage.Regions[i].RegionPixels[j].Id[1];
+                        // для проверки принадлжености пикселя окрестности региона используется упрощенная функция
+                        // специально для отсортированного массива пикселей изображения
                         if (newRegions[z].isPixelInNeighborhood(new int[] { x, y }, segmentedImage.Height, segmentedImage.Width))
                         {
                             isPartOfExistingRegion = true;

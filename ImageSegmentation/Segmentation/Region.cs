@@ -360,9 +360,9 @@ namespace ImageSegmentation.Segmentation
         }
 
         /// <summary>
-        /// Проверяет, находится ли пиксель с заданным Id в окрестностях пикселей данного региона
+        /// Проверяет, находится ли пиксель с заданным Id в окрестностях пикселей данного региона. Только для отсортированного массива пикселей!
         /// </summary>
-        /// <param name="pixelId">Id пикселя</param>
+        /// <param name="pixelId">Id пикселя из отсортированного по строками изображения массива пикселей изображения</param>
         /// <param name="imageHeight">Высота исходного изображения</param>
         /// <param name="imageWidth">Ширина исходного изображения</param>
         /// <returns>true, если пиксель в окрестности, false, если пикселя нет в окрестности</returns>
@@ -383,10 +383,18 @@ namespace ImageSegmentation.Segmentation
                     if (x == pixelId[0] && y == pixelId[1])
                         continue;
 
-                    for (int i = 0; i < RegionPixels.Count; i++)
+                    // т.к. данная функция применяется для отсортированного массива пикселей, то лучше проходить с конца
+                    for (int i = RegionPixels.Count - 1; i >= 0; i--)
                     {
+                        // т.к. мы работаем с отсортированным массивом пикселей, то имеет смысл проверять максимум только imageWidth последних
+                        if (RegionPixels.Count - 1 - i > imageWidth)
+                            break;
+
                         if (isPixelInRegion(new int[] { x, y }))
+                        {
                             isFound = true;
+                            break;
+                        }
                     }
                 }
             }
