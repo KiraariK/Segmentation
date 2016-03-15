@@ -12,8 +12,8 @@ namespace ImageSegmentation.Segmentation
         public static int defaultSegmentSize = 5; // размер начального квадратного сегмента по умолчанию
         public static int defaultSegmentsCount = 400; // максимальное количество начальных квадратных сегментов изображения
         public static double regularizationParameter = 1.0; // регуляризационный параметр для рассчета геометрической близости
-        public static int requiredSegmentsCount = 5; // требуемое количество регионов
-        public static double lowThresholdForRegionSize = 0.1; // минимальный размер сегмента в долях от размера изображения
+        public static int requiredSegmentsCount = 13; // требуемое количество регионов
+        public static double lowThresholdForRegionSize = 0.01; // минимальный размер сегмента в долях от размера изображения
 
         public static SegmentedImage PerformSegmentation(Bitmap image)
         {
@@ -444,23 +444,38 @@ namespace ImageSegmentation.Segmentation
 
                 // объявляем новый список регионов, которые будут получены из текущего региона
                 List<Region> newRegions = new List<Region>();
+                List<string> neighbors = new List<string>(); // список соседства регионов, каждая строка 2 номера региона: "0 1"
                 Region firstRegion = new Region();
                 firstRegion.RegionPixels.Add(segmentedImage.Regions[i].RegionPixels[0]);
                 newRegions.Add(firstRegion);
                 for (int j = 1; j < segmentedImage.Regions[i].RegionPixels.Count; j++)
                 {
                     bool isPartOfExistingRegion = false;
+                    int indexOfRegion = -1;
+                    int x = segmentedImage.Regions[i].RegionPixels[j].Id[0];
+                    int y = segmentedImage.Regions[i].RegionPixels[j].Id[1];
+                    if (x == 26 && y == 39)
+                        indexOfRegion = 0;
                     for (int z = 0; z < newRegions.Count; z++)
                     {
-                        int x = segmentedImage.Regions[i].RegionPixels[j].Id[0];
-                        int y = segmentedImage.Regions[i].RegionPixels[j].Id[1];
                         // для проверки принадлжености пикселя окрестности региона используется упрощенная функция
                         // специально для отсортированного массива пикселей изображения
                         if (newRegions[z].isPixelInNeighborhood(new int[] { x, y }, segmentedImage.Height, segmentedImage.Width))
                         {
-                            isPartOfExistingRegion = true;
-                            newRegions[z].RegionPixels.Add(segmentedImage.Regions[i].RegionPixels[j]);
-                            break;
+                            // если пиксель уже был отнесен к какому-то региону
+                            if (isPartOfExistingRegion)
+                            {
+                                // значит пиксель принадлежит 2-м регионам одновременно - добавляем их к соседним
+                                if (neighbors.IndexOf(indexOfRegion + " " + z) == -1)
+                                    neighbors.Add(indexOfRegion + " " + z);
+                                indexOfRegion = z;
+                            }
+                            else // если пиксель был определен, как сосед региона впервые
+                            {
+                                isPartOfExistingRegion = true;
+                                indexOfRegion = z;
+                                newRegions[z].RegionPixels.Add(segmentedImage.Regions[i].RegionPixels[j]);
+                            }
                         }
                     }
 
@@ -474,11 +489,39 @@ namespace ImageSegmentation.Segmentation
                         // добавляем новый регион в список
                         newRegions.Add(region);
                     }
+                    else // объединяем регионы, если нужно
+                    {
+                        for (int z = neighbors.Count - 1; z >= 0; z--)
+                        {
+                            string[] neighborsParts = neighbors[z].Split(' ');
+                            int firstRegionIndex = int.Parse(neighborsParts[0]);
+                            int secondRegionIndex = int.Parse(neighborsParts[1]);
+                            // заполняем первый регион пикселями из второго
+                            for (int p = 0; p < newRegions[secondRegionIndex].RegionPixels.Count; p++)
+                                newRegions[firstRegionIndex].RegionPixels.Add(newRegions[secondRegionIndex].RegionPixels[p]);
+
+                            newRegions[secondRegionIndex].RegionPixels.Clear();
+                        }
+                        neighbors.Clear();
+
+                        for (int z = 0; z < newRegions.Count; z++)
+                        {
+                            if (newRegions[z].RegionPixels.Count == 0)
+                            {
+                                newRegions.RemoveAt(z);
+                                z--;
+                            }
+                        }
+                                
+                    }
                 }
 
                 // добавляем новые регионы, полученные вместо i-го региона к новому списку регионов
                 for (int j = 0; j < newRegions.Count; j++)
-                    newSegmentedImageRegions.Add(newRegions[j]);
+                {
+                    if (newRegions[j].RegionPixels.Count != 0)
+                        newSegmentedImageRegions.Add(newRegions[j]);
+                }
             }
 
             // мы получили новый список регионов сегментированного изображения, но без средних для региона характеристик (их можно посчитать)
@@ -623,7 +666,7 @@ namespace ImageSegmentation.Segmentation
                 {
                     if (distances[j] == minDistance)
                     {
-                        // самый близкий к текущему маленькому региону поглащает текущий регион
+                        // самый близкий к текущему маленькому региону поглощает текущий регион
                         segmentedImage.Regions[i].Neighbors[j].AddPixelsWithParametersRecalculation(
                             segmentedImage.Regions[i].RemovePixels());
 
@@ -660,6 +703,8 @@ namespace ImageSegmentation.Segmentation
 
                         // поскольку мы текущий регион удалили, то, чтобы не пропускать следующие регионы, делаем
                         i--;
+
+                        break;
                     }
                 }
             }

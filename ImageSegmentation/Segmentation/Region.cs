@@ -373,8 +373,16 @@ namespace ImageSegmentation.Segmentation
             // проверяем принадлежгность данному региону для пикселей из окрестности текущего пикселя
             for (int x = pixelId[0] - 1; x <= pixelId[0] + 1; x++)
             {
+                // Если нашли регион, выходим
+                if (isFound)
+                    break;
+
                 for (int y = pixelId[1] - 1; y <= pixelId[1] + 1; y++)
                 {
+                    // Если нашли регион, выходим
+                    if (isFound)
+                        break;
+
                     // пропускаем пиксель, если такого нет
                     if (x < 0 || x > imageHeight || y < 0 || y > imageWidth)
                         continue;
