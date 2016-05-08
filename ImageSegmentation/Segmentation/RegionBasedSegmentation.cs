@@ -555,7 +555,7 @@ namespace ImageSegmentation.Segmentation
                                 z--;
                             }
                         }
-                                
+
                     }
                 }
 
@@ -573,6 +573,11 @@ namespace ImageSegmentation.Segmentation
             for (int i = 0; i < newSegmentedImageRegions.Count; i++)
                 segmentedImage.Regions.Add(newSegmentedImageRegions[i]);
         }
+
+        //public static void SplitRegions(ref SegmentedImage segmentedImage)
+        //{
+
+        //}
 
         /// <summary>
         /// Заполняет списки id соседних регионов для каждого региона, помечает пиксели, как граничные или неграничные

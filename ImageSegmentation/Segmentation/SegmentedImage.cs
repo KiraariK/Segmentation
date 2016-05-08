@@ -88,8 +88,8 @@ namespace ImageSegmentation.Segmentation
             // запись цветов пикселей, как средних значений цветовых компонент пикселей региона
             for (int i = 0; i < Regions.Count; i++)
                 for (int j = 0; j < Regions[i].RegionPixels.Count; j++)
-                    for (int k = 0; k < Regions[i].RegionPixels[j].RgbData.Length; k++)
-                        Regions[i].RegionPixels[j].RgbData[k] = (int)averageRegionsRGB[i][k];
+                    for (int k = 0; k < Regions[i].RegionPixels[j].SegmentsRgbData.Length; k++)
+                        Regions[i].RegionPixels[j].SegmentsRgbData[k] = (int)averageRegionsRGB[i][k];
         }
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace ImageSegmentation.Segmentation
             {
                 for (int i = 0; i < Regions.Count; i++)
                     for (int j = 0; j < Regions[i].RegionPixels.Count; j++)
-                        colorData[Regions[i].RegionPixels[j].GlobalNumber] = Regions[i].RegionPixels[j].RgbData;
+                        colorData[Regions[i].RegionPixels[j].GlobalNumber] = Regions[i].RegionPixels[j].SegmentsRgbData;
             }
             else
             {
@@ -117,7 +117,7 @@ namespace ImageSegmentation.Segmentation
                         if (Regions[i].RegionPixels[j].isNeighboring)
                             colorData[Regions[i].RegionPixels[j].GlobalNumber] = new int[] { 0, 0, 0 };
                         else
-                            colorData[Regions[i].RegionPixels[j].GlobalNumber] = Regions[i].RegionPixels[j].RgbData;
+                            colorData[Regions[i].RegionPixels[j].GlobalNumber] = Regions[i].RegionPixels[j].SegmentsRgbData;
                     }
                 }
             }
