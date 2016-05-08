@@ -8,6 +8,7 @@ namespace ImageSegmentation.Segmentation
     public class Region
     {
         public enum PixelAction { none, remove, add } // Перечисление, необходимое для обозначения действия над пикселями
+
         public List<Pixel> RegionPixels { get; set; } // Список пикселей данного региона
         public List<double> DistanceSums { get; set; } // Список сумм расстояний от пикселя до всех остальных пикселей региона
         public List<Region> Neighbors { get; set; } // Список индексов соседних регионов

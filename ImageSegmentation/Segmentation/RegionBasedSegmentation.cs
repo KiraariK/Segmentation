@@ -215,7 +215,6 @@ namespace ImageSegmentation.Segmentation
 
             for (int i = 0; i < segmentedImage.Regions.Count; i++)
             {
-                // TODO: Извечь в массивы TextureFeatures и IntencityFeatures
                 for (int j = 0; j < segmentedImage.Regions[i].RegionPixels.Count; j++)
                 {
                     textureFeatures[segmentedImage.Regions[i].RegionPixels[j].GlobalNumber] = segmentedImage.Regions[i].RegionPixels[j].TextureFeatures;
@@ -472,112 +471,116 @@ namespace ImageSegmentation.Segmentation
         /// <param name="segmentedImage">Сегментированное изображение</param>
         public static void SplitRegions(ref SegmentedImage segmentedImage)
         {
-            List<Region> newSegmentedImageRegions = new List<Region>();
+            // Производим расчет усредненных по региону цветов пикселей
+            segmentedImage.AverageRegionPixelsColor();
 
-            int imageWidth = segmentedImage.Width;
+            // Составляем топографически ориентированную карту цветов пикселей, определяющую принадлежность пикселя к региону
+            int[][] classMap = new int[segmentedImage.Height][];
+            for (int i = 0; i < segmentedImage.Height; i++)
+                classMap[i] = new int[segmentedImage.Width];
+
+            for (int i = 0; i < segmentedImage.Regions.Count; i++)
+                for (int j = 0; j < segmentedImage.Regions[i].RegionPixels.Count; j++)
+                    classMap[segmentedImage.Regions[i].RegionPixels[j].Id[0]][segmentedImage.Regions[i].RegionPixels[j].Id[1]] =
+                        segmentedImage.Regions[i].RegionPixels[j].SegmentsGrayColor;
+
+            // Составляем топографически ориентированный массив пикселей
+            Pixel[][] imagePixels = new Pixel[segmentedImage.Height][];
+            for (int i = 0; i < segmentedImage.Height; i++)
+                imagePixels[i] = new Pixel[segmentedImage.Width];
+
             for (int i = 0; i < segmentedImage.Regions.Count; i++)
             {
-                // производим сортировку пикселей региона по порядковому номеру пикселя, получаемому по id региона
-                segmentedImage.Regions[i].RegionPixels.Sort(delegate (Pixel a, Pixel b)
+                for (int j = 0; j < segmentedImage.Regions[i].RegionPixels.Count; j++)
                 {
-                    int numberA = (a.Id[0] * imageWidth) + a.Id[1];
-                    int numberB = (b.Id[0] * imageWidth) + b.Id[1];
-                    return numberA.CompareTo(numberB);
-                });
+                    Pixel currentPixel = segmentedImage.Regions[i].RegionPixels[j];
+                    int x = currentPixel.Id[0];
+                    int y = currentPixel.Id[1];
 
-                // объявляем новый список регионов, которые будут получены из текущего региона
-                List<Region> newRegions = new List<Region>();
-                List<string> neighbors = new List<string>(); // список соседства регионов, каждая строка 2 номера региона: "0 1"
-                Region firstRegion = new Region();
-                firstRegion.RegionPixels.Add(segmentedImage.Regions[i].RegionPixels[0]);
-                newRegions.Add(firstRegion);
-                for (int j = 1; j < segmentedImage.Regions[i].RegionPixels.Count; j++)
-                {
-                    bool isPartOfExistingRegion = false;
-                    int indexOfRegion = -1;
-                    int x = segmentedImage.Regions[i].RegionPixels[j].Id[0];
-                    int y = segmentedImage.Regions[i].RegionPixels[j].Id[1];
-                    if (x == 26 && y == 39)
-                        indexOfRegion = 0;
-                    for (int z = 0; z < newRegions.Count; z++)
-                    {
-                        // для проверки принадлжености пикселя окрестности региона используется упрощенная функция
-                        // специально для отсортированного массива пикселей изображения
-                        if (newRegions[z].isPixelInNeighborhood(new int[] { x, y }, segmentedImage.Height, segmentedImage.Width))
-                        {
-                            // если пиксель уже был отнесен к какому-то региону
-                            if (isPartOfExistingRegion)
-                            {
-                                // значит пиксель принадлежит 2-м регионам одновременно - добавляем их к соседним
-                                if (neighbors.IndexOf(indexOfRegion + " " + z) == -1)
-                                    neighbors.Add(indexOfRegion + " " + z);
-                                indexOfRegion = z;
-                            }
-                            else // если пиксель был определен, как сосед региона впервые
-                            {
-                                isPartOfExistingRegion = true;
-                                indexOfRegion = z;
-                                newRegions[z].RegionPixels.Add(segmentedImage.Regions[i].RegionPixels[j]);
-                            }
-                        }
-                    }
-
-                    // если пиксель не находится в окрестности ни одного из известных регионов
-                    if (!isPartOfExistingRegion)
-                    {
-                        // создаем новые регион
-                        Region region = new Region();
-                        // добавляем пиксель к новому региону
-                        region.RegionPixels.Add(segmentedImage.Regions[i].RegionPixels[j]);
-                        // добавляем новый регион в список
-                        newRegions.Add(region);
-                    }
-                    else // объединяем регионы, если нужно
-                    {
-                        for (int z = neighbors.Count - 1; z >= 0; z--)
-                        {
-                            string[] neighborsParts = neighbors[z].Split(' ');
-                            int firstRegionIndex = int.Parse(neighborsParts[0]);
-                            int secondRegionIndex = int.Parse(neighborsParts[1]);
-                            // заполняем первый регион пикселями из второго
-                            for (int p = 0; p < newRegions[secondRegionIndex].RegionPixels.Count; p++)
-                                newRegions[firstRegionIndex].RegionPixels.Add(newRegions[secondRegionIndex].RegionPixels[p]);
-
-                            newRegions[secondRegionIndex].RegionPixels.Clear();
-                        }
-                        neighbors.Clear();
-
-                        for (int z = 0; z < newRegions.Count; z++)
-                        {
-                            if (newRegions[z].RegionPixels.Count == 0)
-                            {
-                                newRegions.RemoveAt(z);
-                                z--;
-                            }
-                        }
-
-                    }
+                    imagePixels[x][y] = new Pixel(currentPixel.Id, currentPixel.RgbData, segmentedImage.Width);
+                    imagePixels[x][y].GlobalNumber = currentPixel.GlobalNumber;
+                    imagePixels[x][y].Region = null; // необходимо для операции разделения регионов
+                    imagePixels[x][y].SegmentsRgbData = currentPixel.SegmentsRgbData;
+                    imagePixels[x][y].SegmentsGrayColor = currentPixel.SegmentsGrayColor;
+                    imagePixels[x][y].IntensityFeatures = currentPixel.IntensityFeatures;
+                    imagePixels[x][y].ConditionalIntensityFeatures = currentPixel.ConditionalIntensityFeatures;
+                    imagePixels[x][y].TextureFeatures = currentPixel.TextureFeatures;
+                    imagePixels[x][y].isNeighboring = currentPixel.isNeighboring;
+                    imagePixels[x][y].Type = Pixel.PixelType.inner;
+                    if ((x == 0) || (x == segmentedImage.Height - 1))
+                        imagePixels[x][y].Type = Pixel.PixelType.border;
+                    if ((y == 0) || (y == segmentedImage.Width - 1))
+                        imagePixels[x][y].Type = Pixel.PixelType.border;
                 }
+            }
+            List<Region> tempRegions = new List<Region>();
 
-                // добавляем новые регионы, полученные вместо i-го региона к новому списку регионов
-                for (int j = 0; j < newRegions.Count; j++)
+            for (int i = 0; i < segmentedImage.Height; i++)
+            {
+                for (int j = 0; j < segmentedImage.Width; j++)
                 {
-                    if (newRegions[j].RegionPixels.Count != 0)
-                        newSegmentedImageRegions.Add(newRegions[j]);
+                    if (imagePixels[i][j].Region == null)
+                    {
+                        Region region = new Region();
+                        tempRegions.Add(region);
+                        region.RegionPixels.Add(imagePixels[i][j]);
+                        imagePixels[i][j].Region = region;
+                    }
+
+                    // рассматриваем 8-ми связную окресность текущего пикселя
+                    for (int fi = -1; fi <= 1; fi++)
+                    {
+                        for (int fj = -1; fj <= 1; fj++)
+                        {
+                            if ((fi + i >= 0) && (fi + i < segmentedImage.Height) &&
+                                (fj + j >= 0) && (fj + j < segmentedImage.Width))
+                            {
+                                int indexX = fi + i;
+                                int indexY = fj + j;
+                                Pixel neighbourPixel = imagePixels[indexX][indexY];
+
+                                if (classMap[i][j] != classMap[indexX][indexY])
+                                    imagePixels[i][j].Type = Pixel.PixelType.border;
+
+                                if (neighbourPixel.Region == null)
+                                {
+                                    if (classMap[i][j] == classMap[indexX][indexY])
+                                    {
+                                        imagePixels[indexX][indexY].Region = imagePixels[i][j].Region;
+                                        imagePixels[i][j].Region.RegionPixels.Add(imagePixels[indexX][indexY]);
+                                    }
+                                }
+                                else if (neighbourPixel.Region != imagePixels[i][j].Region)
+                                {
+                                    if (classMap[i][j] == classMap[indexX][indexY])
+                                    {
+                                        // Перемещаем пиксели из региона пикселя окрестности в регион текущего пикселя
+                                        Region regionFROM = imagePixels[indexX][indexY].Region;
+                                        Region regionTO = imagePixels[i][j].Region;
+                                        for (int k = 0; k < regionFROM.RegionPixels.Count; k++)
+                                        {
+                                            Pixel pixel = regionFROM.RegionPixels[k];
+                                            pixel.Region = regionTO;
+                                            regionTO.RegionPixels.Add(pixel);
+                                        }
+                                        regionFROM.RegionPixels.Clear();
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
-            // мы получили новый список регионов сегментированного изображения, но без средних для региона характеристик (их можно посчитать)
-            // заменяем существующие регионы изображения новыми только что полученными
-            segmentedImage.Regions.Clear();
-            for (int i = 0; i < newSegmentedImageRegions.Count; i++)
-                segmentedImage.Regions.Add(newSegmentedImageRegions[i]);
+            List<Region> newRegions = new List<Region>();
+            for (int i = 0; i < tempRegions.Count; i++)
+            {
+                if (tempRegions[i].RegionPixels.Count > 0)
+                    newRegions.Add(tempRegions[i]);
+            }
+
+            segmentedImage.Regions = newRegions;
         }
-
-        //public static void SplitRegions(ref SegmentedImage segmentedImage)
-        //{
-
-        //}
 
         /// <summary>
         /// Заполняет списки id соседних регионов для каждого региона, помечает пиксели, как граничные или неграничные

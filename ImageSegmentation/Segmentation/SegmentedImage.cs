@@ -43,25 +43,10 @@ namespace ImageSegmentation.Segmentation
                     Regions.Add(region);
                 }
             }
-            //for (int i = 0; i < allPixels.Length; i++)
-            //{
-            //    for (int j = 0; j < allPixels.Length; j++)
-            //    {
-            //        if (i == j)
-            //            continue;
-
-            //        // Считаем расстояние от пикселя i до пикселя j
-            //        double distance = Math.Sqrt((allPixels[i].Id[0] - allPixels[j].Id[0]) * (allPixels[i].Id[0] - allPixels[j].Id[0]) +
-            //            (allPixels[i].Id[1] - allPixels[j].Id[1]) * (allPixels[i].Id[1] - allPixels[j].Id[1]));
-
-            //        // Записываем на соответствующее место найденное расстояние в массив расстояний пикселя i
-            //        Distances[allPixels[i].GlobalNumber][allPixels[j].GlobalNumber] = distance;
-            //    }
-            //}
         }
 
         /// <summary>
-        /// Усредняет значения цветовых компонент пикселя по региону
+        /// Усредняет значения цветовых компонент пикселя по региону и записывает в массив SegmentsRgbData пикселя, обновляет серый цвет
         /// </summary>
         public void AverageRegionPixelsColor()
         {
@@ -87,9 +72,19 @@ namespace ImageSegmentation.Segmentation
 
             // запись цветов пикселей, как средних значений цветовых компонент пикселей региона
             for (int i = 0; i < Regions.Count; i++)
+            {
                 for (int j = 0; j < Regions[i].RegionPixels.Count; j++)
+                {
+                    int colorSum = 0;
                     for (int k = 0; k < Regions[i].RegionPixels[j].SegmentsRgbData.Length; k++)
+                    {
                         Regions[i].RegionPixels[j].SegmentsRgbData[k] = (int)averageRegionsRGB[i][k];
+                        colorSum += (int)averageRegionsRGB[i][k];
+                    }
+                    // запись серых цветов для пикселей, основанных на измененных данных SegmentsRgbData
+                    Regions[i].RegionPixels[j].SegmentsGrayColor = colorSum / 3;
+                }
+            }
         }
 
         /// <summary>
