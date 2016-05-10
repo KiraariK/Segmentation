@@ -40,6 +40,10 @@ namespace ImageSegmentation.Segmentation
                         }
                     }
                     Region region = new Region(pixels);
+
+                    for (int k = 0; k < region.RegionPixels.Count; k++)
+                        region.RegionPixels[k].Region = region;
+
                     Regions.Add(region);
                 }
             }

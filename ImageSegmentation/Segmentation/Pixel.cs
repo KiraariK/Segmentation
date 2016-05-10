@@ -36,6 +36,8 @@ namespace ImageSegmentation.Segmentation
             }
             SegmentsGrayColor = colorSum / 3;
 
+            Region = null;
+
             IntensityFeatures = new double[3];
             ConditionalIntensityFeatures = new double[3];
             TextureFeatures = new double[TextureFeaturesProcessing.numOfFeatures * TextureFeaturesProcessing.colorsCount];

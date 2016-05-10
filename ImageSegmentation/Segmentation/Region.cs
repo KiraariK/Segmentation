@@ -11,7 +11,7 @@ namespace ImageSegmentation.Segmentation
 
         public List<Pixel> RegionPixels { get; set; } // Список пикселей данного региона
         public List<double> DistanceSums { get; set; } // Список сумм расстояний от пикселя до всех остальных пикселей региона
-        public List<Region> Neighbors { get; set; } // Список индексов соседних регионов
+        public List<Region> Neighbors { get; set; } // Список соседних регионов
         public int[] SpacialSenterId { get; set; } // Идентификатор пикслея, являющегося центром региона
         public int Area { get; set; } // Пложадь региона
         public double[] AverageTextureFeature { get; set; } // Среднее значение текстурных характеристик региона
@@ -161,6 +161,7 @@ namespace ImageSegmentation.Segmentation
         /// <param name="pixel">Пиксель, добавляемый к региону</param>
         public void AddPixelWithParametersRecalculation(Pixel pixel)
         {
+            pixel.Region = this;
             RegionPixels.Add(pixel);
             CalculateParameters(PixelAction.add, new Pixel[] { pixel });
         }
@@ -181,6 +182,9 @@ namespace ImageSegmentation.Segmentation
         /// <param name="pixels">Добавляемый к региону массив пикселей</param>
         public void AddPixelsWithParametersRecalculation(Pixel[] pixels)
         {
+            for (int i = 0; i < pixels.Length; i++)
+                pixels[i].Region = this;
+
             RegionPixels.AddRange(pixels);
             CalculateParameters(PixelAction.add, pixels);
         }
