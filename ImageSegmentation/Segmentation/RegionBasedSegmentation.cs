@@ -515,6 +515,7 @@ namespace ImageSegmentation.Segmentation
             }
             List<Region> tempRegions = new List<Region>();
 
+            // фомирование новых регионов
             for (int i = 0; i < segmentedImage.Height; i++)
             {
                 for (int j = 0; j < segmentedImage.Width; j++)
@@ -588,56 +589,50 @@ namespace ImageSegmentation.Segmentation
         /// <param name="segmentedImage">Сегментируемое изображение</param>
         private static void CalculateNeighborhood(ref SegmentedImage segmentedImage)
         {
+            // Составляем топографически ориентированный массив пикселей
+            Pixel[][] imagePixels = new Pixel[segmentedImage.Height][];
+            for (int i = 0; i < segmentedImage.Height; i++)
+                imagePixels[i] = new Pixel[segmentedImage.Width];
+
             for (int i = 0; i < segmentedImage.Regions.Count; i++)
             {
                 for (int j = 0; j < segmentedImage.Regions[i].RegionPixels.Count; j++)
                 {
-                    int[] pixelId = segmentedImage.Regions[i].RegionPixels[j].Id;
+                    Pixel currentPixel = segmentedImage.Regions[i].RegionPixels[j];
+                    int x = currentPixel.Id[0];
+                    int y = currentPixel.Id[1];
 
-                    bool isNeighboring = false;
-                    // проверяем 8-ми связную окрестность пикселя
-                    for (int x = pixelId[0] - 1; x <= pixelId[0] + 1; x++)
+                    imagePixels[x][y] = currentPixel;
+                }
+            }
+
+            for (int i = 0; i < segmentedImage.Height; i++)
+            {
+                for (int j = 0; j < segmentedImage.Width; j++)
+                {
+                    Pixel currentPixel = imagePixels[i][j];
+                    // Рассматриваем 8-ми связную окрестность текщего пикселя
+                    for (int x = i - 1; x <= i + 1; x++)
                     {
-                        for (int y = pixelId[1] - 1; y <= pixelId[1] + 1; y++)
+                        for (int y = j - 1; y <= j + 1; y++)
                         {
                             // пропускаем пиксель, если такого нет
-                            if (x < 0 || x > segmentedImage.Height || y < 0 || y > segmentedImage.Width)
+                            if (x < 0 || x >= segmentedImage.Height || y < 0 || y >= segmentedImage.Width)
                                 continue;
 
-                            // пропускаем сравнение пикселя с самим собой
-                            if (x == pixelId[0] && y == pixelId[1])
-                                continue;
+                            Pixel neighborPixel = imagePixels[x][y];
 
-                            // если в текущем регионе пикселя нет
-                            if (!segmentedImage.Regions[i].isPixelInRegion(new int[] { x, y }))
+                            // Если соседний пиксель относится к другому региону
+                            if (currentPixel.Region != neighborPixel.Region)
                             {
-                                // говорим, что пиксель должен быть граничным
-                                isNeighboring = true;
+                                currentPixel.isNeighboring = true;
 
-                                // ищем в других регионах
-                                for (int z = 0; z < segmentedImage.Regions.Count; z++)
-                                {
-                                    // пропускаем текущий регион
-                                    if (segmentedImage.Regions[z].SpacialSenterId == segmentedImage.Regions[i].SpacialSenterId)
-                                        continue;
-
-                                    // когда нашли регион, которму принадлежит пиксель
-                                    if (segmentedImage.Regions[z].isPixelInRegion(new int[] { x, y }))
-                                    {
-                                        // Добавляем регион в список соседних регионов текущего региона
-                                        if (segmentedImage.Regions[i].Neighbors.IndexOf(segmentedImage.Regions[z]) == -1)
-                                            segmentedImage.Regions[i].Neighbors.Add(segmentedImage.Regions[z]);
-                                    }
-                                }
+                                // Если такой регион еще не занесен в списки соседних регионов текущего региона
+                                if (currentPixel.Region.Neighbors.IndexOf(neighborPixel.Region) == -1)
+                                    currentPixel.Region.Neighbors.Add(neighborPixel.Region);
                             }
                         }
                     }
-
-                    // помечаем пиксель, как граничный или неграничный
-                    if (!isNeighboring)
-                        segmentedImage.Regions[i].RegionPixels[j].isNeighboring = false;
-                    else
-                        segmentedImage.Regions[i].RegionPixels[j].isNeighboring = true;
                 }
             }
         }
