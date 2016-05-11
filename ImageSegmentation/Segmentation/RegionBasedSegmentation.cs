@@ -71,6 +71,12 @@ namespace ImageSegmentation.Segmentation
             });
             logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - calcRegionParamsTime1));
 
+            //logger.WriteLog("Первое определение соседства регионов: ");
+            //DateTime firstNeighborsTime = DateTime.Now;
+            //// определение соседства регионов
+            //CalculateNeighborhood(ref segmentedImage);
+            //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - firstNeighborsTime));
+
             logger.WriteLog("Выполнение этапа миграции пикселей: ");
             DateTime pixelMigrationTime = DateTime.Now;
             // классификация пикселей на основе KMCC алгоритма
@@ -100,11 +106,11 @@ namespace ImageSegmentation.Segmentation
             });
             logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - calcRegionParamsTime2));
 
-            logger.WriteLog("Определение соседства регионов: ");
-            DateTime neighborsTime = DateTime.Now;
+            logger.WriteLog("Второе определение соседства регионов: ");
+            DateTime SecondNeighborsTime = DateTime.Now;
             // определение соседства регионов
             CalculateNeighborhood(ref segmentedImage);
-            logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - neighborsTime));
+            logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - SecondNeighborsTime));
 
             logger.WriteLog("Удаление маленьких регионов: ");
             DateTime removingSmallRegions = DateTime.Now;
@@ -348,7 +354,7 @@ namespace ImageSegmentation.Segmentation
 
                                     if (segmentedImage.Regions[i].RegionPixels.Count != 0) // если в регионе еще есть пиксели
                                     {
-                                        if (j != segmentedImage.Regions[i].RegionPixels.Count) // если текущий удаленный пиксель не был последним рассматриваемым в регионе
+                                        if (j != segmentedImage.Regions[i].RegionPixels.Count - 1) // если текущий удаленный пиксель не был последним рассматриваемым в регионе
                                         {
                                             // значит удаленный пиксель был внутри региона, в силу особенностей удаления элемента из List
                                             // чтобы не пропускать пиксели делаем:
@@ -365,6 +371,255 @@ namespace ImageSegmentation.Segmentation
                 }
             }
         }
+
+        //private static void KMCCClassification(double regularizationParameter, ref SegmentedImage segmentedImage)
+        //{
+        //    // Составляем топографически ориентированный массив пикселей
+        //    Pixel[][] imagePixels = new Pixel[segmentedImage.Height][];
+        //    for (int i = 0; i < segmentedImage.Height; i++)
+        //        imagePixels[i] = new Pixel[segmentedImage.Width];
+
+        //    for (int i = 0; i < segmentedImage.Regions.Count; i++)
+        //    {
+        //        for (int j = 0; j < segmentedImage.Regions[i].RegionPixels.Count; j++)
+        //        {
+        //            Pixel currentPixel = segmentedImage.Regions[i].RegionPixels[j];
+        //            int x = currentPixel.Id[0];
+        //            int y = currentPixel.Id[1];
+
+        //            imagePixels[x][y] = currentPixel;
+        //        }
+        //    }
+
+        //    bool isNeedInteration = true;
+        //    int iterationsCount = 1;
+        //    while (isNeedInteration && iterationsCount > 0)
+        //    {
+        //        iterationsCount--;
+
+        //        // настраиваем параметры перед очередной итерацией алгоритма
+        //        isNeedInteration = false;
+        //        for (int i = 0; i < segmentedImage.Regions.Count; i++)
+        //            for (int j = 0; j < segmentedImage.Regions[i].RegionPixels.Count; j++)
+        //                segmentedImage.Regions[i].RegionPixels[j].IsChecked = false;
+
+        //        //проходимся по всем пикселям изображения в двойном цикле по пикселям регионов
+        //        for (int i = 0; i < segmentedImage.Regions.Count; i++)
+        //        {
+        //            for (int j = 0; j < segmentedImage.Regions[i].RegionPixels.Count; j++)
+        //            {
+        //                Pixel currentPixel = segmentedImage.Regions[i].RegionPixels[j];
+
+        //                if (currentPixel.IsChecked)
+        //                    continue; // пропускаем пиксели, которые уже были проверены на данной итерации
+
+        //                currentPixel.IsChecked = true;
+
+        //                // подсчет средней площади для всех регионов
+        //                double averageArea = 0.0;
+        //                for (int z = 0; z < segmentedImage.Regions.Count; z++)
+        //                    averageArea += segmentedImage.Regions[z].Area;
+        //                averageArea /= segmentedImage.Regions.Count;
+
+        //                // нахождение расстояния пикселя до региона, в котором он находится сейчас
+        //                double selfDistance = 0.0;
+        //                // подсчет квадратов разностей элементов векторов условной интенсивности
+        //                double selfSum = 0.0;
+        //                for (int z = 0; z < currentPixel.ConditionalIntensityFeatures.Length; z++)
+        //                {
+        //                    // находится квадрат разности элементов вектора условной интенсивности текущего пикселя и текущего региона
+        //                    selfSum += (currentPixel.ConditionalIntensityFeatures[z] -
+        //                        currentPixel.Region.AverageConditionalIntensityFeature[z]) *
+        //                        (currentPixel.ConditionalIntensityFeatures[z] -
+        //                        currentPixel.Region.AverageConditionalIntensityFeature[z]);
+        //                }
+        //                // Евклидово расстояние между векторами условной интенсивности текущего пикселя и текущего региона прибавляется к общему расстоянию
+        //                selfDistance += Math.Sqrt(selfSum);
+
+        //                // подсчет квадратов разностей элементов векторов текстурных характеристик
+        //                selfSum = 0.0;
+        //                for (int z = 0; z < currentPixel.TextureFeatures.Length; z++)
+        //                {
+        //                    // находится квадрат разности элементов вектора текстурной характеристики текущего пикселя и текущего региона
+        //                    selfSum += (currentPixel.TextureFeatures[z] -
+        //                        currentPixel.Region.AverageTextureFeature[z]) *
+        //                        (currentPixel.TextureFeatures[z] -
+        //                        currentPixel.Region.AverageTextureFeature[z]);
+        //                }
+        //                // Евклидово расстояние между векторами текстурной характеристики текущего пикселя и текущего региона прибавляется к общему расстоянию
+        //                selfDistance += Math.Sqrt(selfSum);
+
+        //                // подсчет квадатов разностей элементов вектора геометрической позиции текущего пикселя и центра текущего региона
+        //                selfSum = 0.0;
+        //                for (int z = 0; z < currentPixel.Id.Length; z++)
+        //                {
+        //                    // находится квадрат разности элементов вектора геометрической позиции текущего пикселя и центра текущего региона
+        //                    selfSum += (currentPixel.Id[z] - currentPixel.Region.SpacialSenterId[z]) *
+        //                        (currentPixel.Id[z] - currentPixel.Region.SpacialSenterId[z]);
+        //                }
+        //                // Евклидово расстояние между векторами геометрического положения текущего пикселя и центра текущего региона прибавляется к общему расстоянию
+        //                selfDistance += regularizationParameter * (averageArea / currentPixel.Region.Area) * Math.Sqrt(selfSum);
+
+        //                // массив для хранения расстояний от текущего пикселя до соседних регионов
+        //                double[] distances = new double[currentPixel.Region.Neighbors.Count];
+        //                // Нахождение расстояния от текущего пикселя до соседних регионов
+        //                for (int k = 0; k < currentPixel.Region.Neighbors.Count; k++)
+        //                {
+        //                    Region currentRegion = currentPixel.Region.Neighbors[k];
+
+        //                    // подсчет квадратов разностей элементов векторов условной интенсивности
+        //                    double sum = 0.0;
+        //                    for (int z = 0; z < currentPixel.ConditionalIntensityFeatures.Length; z++)
+        //                    {
+        //                        // находится квадрат разности элементов вектора условной интенсивности текущего пикселя и текущего региона
+        //                        sum += (currentPixel.ConditionalIntensityFeatures[z] -
+        //                            currentRegion.AverageConditionalIntensityFeature[z]) *
+        //                            (currentPixel.ConditionalIntensityFeatures[z] -
+        //                            currentRegion.AverageConditionalIntensityFeature[z]);
+        //                    }
+        //                    // Евклидово расстояние между векторами условной интенсивности текущего пикселя и текущего региона прибавляется к общему расстоянию
+        //                    distances[k] += Math.Sqrt(sum);
+
+        //                    // подсчет квадратов разностей элементов векторов текстурных характеристик
+        //                    sum = 0.0;
+        //                    for (int z = 0; z < currentPixel.TextureFeatures.Length; z++)
+        //                    {
+        //                        // находится квадрат разности элементов вектора текстурной характеристики текущего пикселя и текущего региона
+        //                        sum += (currentPixel.TextureFeatures[z] -
+        //                            currentRegion.AverageTextureFeature[z]) *
+        //                            (currentPixel.TextureFeatures[z] -
+        //                            currentRegion.AverageTextureFeature[z]);
+        //                    }
+        //                    // Евклидово расстояние между векторами текстурной характеристики текущего пикселя и текущего региона прибавляется к общему расстоянию
+        //                    distances[k] += Math.Sqrt(sum);
+
+        //                    // подсчет квадатов разностей элементов вектора геометрической позиции текущего пикселя и центра текущего региона
+        //                    sum = 0.0;
+        //                    for (int z = 0; z < currentPixel.Id.Length; z++)
+        //                    {
+        //                        // находится квадрат разности элементов вектора геометрической позиции текущего пикселя и центра текущего региона
+        //                        sum += (currentPixel.Id[z] - currentRegion.SpacialSenterId[z]) *
+        //                            (currentPixel.Id[z] - currentRegion.SpacialSenterId[z]);
+        //                    }
+        //                    // Евклидово расстояние между векторами геометрического положения текущего пикселя и центра текущего региона прибавляется к общему расстоянию
+        //                    distances[k] += regularizationParameter * (averageArea / currentRegion.Area) * Math.Sqrt(sum);
+        //                }
+
+        //                // определение минимального расстояния и перемещение пикселя
+        //                double minDistance = distances.Min();
+        //                // Выполняем миграцию пикселя тогда, когда до соседнего региона расстояние меньше, чем до собственного
+        //                if (minDistance < selfDistance)
+        //                {
+        //                    for (int k = 0; k < distances.Length; k++)
+        //                    {
+        //                        if (distances[k] == minDistance)
+        //                        {
+        //                            // удаляем пиксель из текущего региона и добавляем его в самый близкий для него соседний регион (регион k)
+        //                            currentPixel.Region.Neighbors[k].AddPixelWithParametersRecalculation(
+        //                                currentPixel.Region.RemovePixelWithParametersRecalculation(currentPixel.Id));
+
+        //                            List<Region> alreadyCheckedRegions = new List<Region>(); // Регионы, все соседи которого перепроверены
+        //                            // рассматриваем 8-ми связную окрестность перемещенного пикселя
+        //                            for (int x = currentPixel.Id[0] - 1; x <= currentPixel.Id[0] + 1; x++)
+        //                            {
+        //                                for (int y = currentPixel.Id[1] - 1; y <= currentPixel.Id[1] + 1; y++)
+        //                                {
+        //                                    // пропускаем пиксель, если такого нет
+        //                                    if (x < 0 || x >= segmentedImage.Height || y < 0 || y >= segmentedImage.Width)
+        //                                        continue;
+
+        //                                    Pixel firstNeighboringPixel = imagePixels[x][y];
+
+        //                                    // для каждого пикселя из окрестности проводим определение соседства регионов
+        //                                    // для каждого из них также рассматриваем 8-ми связную окрестность
+        //                                    bool isNeedCheck = false;
+        //                                    for (int xx = x - 1; xx <= x + 1; xx++)
+        //                                    {
+        //                                        for (int yy = y - 1; yy <= y + 1; yy++)
+        //                                        {
+        //                                            // пропускаем пиксель, если такого нет
+        //                                            if (xx < 0 || xx >= segmentedImage.Height || yy < 0 || yy >= segmentedImage.Width)
+        //                                                continue;
+
+        //                                            Pixel secondNeighboringPixel = imagePixels[xx][yy];
+
+        //                                            if (firstNeighboringPixel.Region != secondNeighboringPixel.Region)
+        //                                            {
+        //                                                firstNeighboringPixel.isNeighboring = true;
+
+        //                                                if (firstNeighboringPixel.Region.Neighbors.IndexOf(secondNeighboringPixel.Region) == -1)
+        //                                                    firstNeighboringPixel.Region.Neighbors.Add(secondNeighboringPixel.Region);
+
+        //                                                if (secondNeighboringPixel.Region.Neighbors.IndexOf(firstNeighboringPixel.Region) == -1)
+        //                                                    secondNeighboringPixel.Region.Neighbors.Add(firstNeighboringPixel.Region);
+        //                                            }
+        //                                            else
+        //                                                // TODO: Возможно, среди регионов firstNeighboringPixel.Region есть регион, с которым firstNeighboringPixel.Region уже не граничит
+        //                                                isNeedCheck = true;
+        //                                        }
+        //                                    }
+
+        //                                    // Если хотя бы один соседний пиксель принадлежит тому же региону и этот регион еще не проверялся, то нужно проверить соседство с соседями
+        //                                    if (isNeedCheck && (alreadyCheckedRegions.IndexOf(firstNeighboringPixel.Region) == -1))
+        //                                    {
+        //                                        List<Region> checkRegions = new List<Region>();
+        //                                        for (int z = 0; z < firstNeighboringPixel.Region.RegionPixels.Count; z++)
+        //                                        {
+        //                                            int pixelX = firstNeighboringPixel.Region.RegionPixels[z].Id[0];
+        //                                            int pixelY = firstNeighboringPixel.Region.RegionPixels[z].Id[1];
+
+        //                                            // Рассматриваем 8-ми связную окрестность пикселя
+        //                                            for (int xx = pixelX - 1; xx <= pixelX + 1; xx++)
+        //                                            {
+        //                                                for (int yy = pixelY - 1; yy <= pixelY + 1; yy++)
+        //                                                {
+        //                                                    // пропускаем пиксель, если такого нет
+        //                                                    if (xx < 0 || xx >= segmentedImage.Height || yy < 0 || yy >= segmentedImage.Width)
+        //                                                        continue;
+
+        //                                                    // Если в списке соседей такой регион есть
+        //                                                    if (firstNeighboringPixel.Region.Neighbors.IndexOf(imagePixels[xx][yy].Region) != -1)
+        //                                                    {
+        //                                                        // Если в контрольном списке соседей такого региона нет
+        //                                                        if (checkRegions.IndexOf(imagePixels[xx][yy].Region) == -1)
+        //                                                            checkRegions.Add(imagePixels[xx][yy].Region);
+        //                                                    }
+        //                                                }
+        //                                            }
+        //                                        }
+
+        //                                        // Если какой-то регион физическо исчез из соседей, но в списке остался,
+        //                                        // то он будет присутствовать в списке соседей, но его не будет в контрольном списке соседей
+        //                                        for (int z = 0; z < firstNeighboringPixel.Region.Neighbors.Count; z++)
+        //                                        {
+        //                                            if (checkRegions.IndexOf(firstNeighboringPixel.Region.Neighbors[z]) == -1)
+        //                                                firstNeighboringPixel.Region.Neighbors.RemoveAt(z);
+        //                                        }
+
+        //                                        alreadyCheckedRegions.Add(firstNeighboringPixel.Region);
+        //                                    }
+        //                                }
+        //                            }
+
+        //                            if (segmentedImage.Regions[i].RegionPixels.Count != 0) // если в регионе еще есть пиксели
+        //                            {
+        //                                if (j != segmentedImage.Regions[i].RegionPixels.Count - 1) // если текущий удаленный пиксель не был последним рассматриваемым в регионе
+        //                                {
+        //                                    // значит удаленный пиксель был внутри региона, в силу особенностей удаления элемента из List
+        //                                    // чтобы не пропускать пиксели делаем:
+        //                                    j--;
+        //                                }
+        //                            }
+
+        //                            isNeedInteration = true;
+        //                            break;
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
 
         /// <summary>
         /// Объединяет близкие по параметрам регионы для получения заданного количества регионов
@@ -596,9 +851,11 @@ namespace ImageSegmentation.Segmentation
 
             for (int i = 0; i < segmentedImage.Regions.Count; i++)
             {
+                segmentedImage.Regions[i].Neighbors.Clear();
                 for (int j = 0; j < segmentedImage.Regions[i].RegionPixels.Count; j++)
                 {
                     Pixel currentPixel = segmentedImage.Regions[i].RegionPixels[j];
+                    currentPixel.isNeighboring = false;
                     int x = currentPixel.Id[0];
                     int y = currentPixel.Id[1];
 
@@ -611,7 +868,7 @@ namespace ImageSegmentation.Segmentation
                 for (int j = 0; j < segmentedImage.Width; j++)
                 {
                     Pixel currentPixel = imagePixels[i][j];
-                    // Рассматриваем 8-ми связную окрестность текщего пикселя
+                    // Рассматриваем 8-ми связную окрестность текущего пикселя
                     for (int x = i - 1; x <= i + 1; x++)
                     {
                         for (int y = j - 1; y <= j + 1; y++)
