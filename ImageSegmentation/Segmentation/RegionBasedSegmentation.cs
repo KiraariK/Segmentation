@@ -264,8 +264,9 @@ namespace ImageSegmentation.Segmentation
         /// </summary>
         /// <param name="regularizationParameter">Регуляризационный параметр ламбда, используемый при вычислении геометрического расстояния</param>
         /// <param name="segmentedImage">Сегментируемое изображение</param>
-        private static void KMCCClassification(double regularizationParameter, ref SegmentedImage segmentedImage)
+        private static void KMCCClassification(double regularizationParameter, ref SegmentedImage smg)
         {
+            SegmentedImage segmentedImage = smg;
             bool isNeedInteration = true;
             int iterationsCount = 1;
             while (isNeedInteration && iterationsCount > 0)
@@ -290,9 +291,10 @@ namespace ImageSegmentation.Segmentation
 
                         // массив для хранения расстояний по KMCC между текущим пикселем и всеми регионами
                         double[] distances = new double[segmentedImage.Regions.Count];
-                        for (int k = 0; k < segmentedImage.Regions.Count; k++)
+                        Parallel.For(0, segmentedImage.Regions.Count, k =>
                         {
-                            // TODO: пропускать те регионы, с которыми не соседствует регион, в котором в данный момент находится пиксель
+                        //for (int k = 0; k < segmentedImage.Regions.Count; k++)
+                        //{
 
                             // подсчет квадратов разностей элементов векторов условной интенсивности
                             double sum = 0.0;
@@ -337,7 +339,8 @@ namespace ImageSegmentation.Segmentation
                             averageArea /= segmentedImage.Regions.Count;
                             // Евклидово расстояние между векторами геометрического положения текущего пикселя и центра текущего региона прибавляется к общему расстоянию
                             distances[k] += regularizationParameter * (averageArea / segmentedImage.Regions[k].Area) * Math.Sqrt(sum);
-                        }
+                        //}
+                        });
 
                         // определение минимального расстояния и перемещение пикселя
                         double minDistance = distances.Min();
@@ -370,6 +373,7 @@ namespace ImageSegmentation.Segmentation
                     }
                 }
             }
+            smg = segmentedImage;
         }
 
         //private static void KMCCClassification(double regularizationParameter, ref SegmentedImage segmentedImage)
