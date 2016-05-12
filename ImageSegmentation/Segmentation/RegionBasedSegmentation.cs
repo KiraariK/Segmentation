@@ -24,105 +24,106 @@ namespace ImageSegmentation.Segmentation
             for (int i = 0; i < imageSize; i++)
                 imageColorData[i] = new int[3];
 
-            Logger logger = new Logger("../../Log/log_performance.txt");
-            logger.WriteLog("Начало алгоритма сегментации\r\n");
-            DateTime start = DateTime.Now;
+            //Logger logger = new Logger("../../Log/log_performance.txt");
+            //logger.WriteLog("Начало алгоритма сегментации\r\n");
+            //DateTime start = DateTime.Now;
 
-            logger.WriteLog("Загрузка изображения: ");
-            DateTime loadImageTime = DateTime.Now;
+            //logger.WriteLog("Загрузка изображения: ");
+            //DateTime loadImageTime = DateTime.Now;
             // заполнение массива цветов изображения - загрузка изображения
             ImageProcessing.LoadImage(image, ref imageColorData, ref imageHeight, ref imageWidth);
-            logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - loadImageTime));
+            //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - loadImageTime));
 
             // подбор начального размера сегмента, исходя из расчета максимум defaultSegmentsCount начальных сегментов на изображении
             int segmentSize = defaultSegmentSize < ((int)Math.Sqrt(imageHeight * imageWidth / ((double)defaultSegmentsCount))) ?
                 ((int)Math.Ceiling(Math.Sqrt(imageHeight * imageWidth / ((double)defaultSegmentsCount)))) : defaultSegmentSize;
 
-            logger.WriteLog("Создание начального сегментированного изображения: ");
-            DateTime defaultSegmentsTime = DateTime.Now;
+            //logger.WriteLog("Создание начального сегментированного изображения: ");
+            //DateTime defaultSegmentsTime = DateTime.Now;
             // создание начального сегментированного изображения
             SegmentedImage segmentedImage = new SegmentedImage(imageColorData, imageHeight, imageWidth, segmentSize);
-            logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - defaultSegmentsTime));
+            //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - defaultSegmentsTime));
 
-            logger.WriteLog("Получение и заполнение Lab-данных: ");
-            DateTime labDataTime = DateTime.Now;
+            //logger.WriteLog("Получение и заполнение Lab-данных: ");
+            //DateTime labDataTime = DateTime.Now;
             // заполнение L*a*b данных для каждого пикселя сегмента
             FillSegmentedImageIntensityFeatures(imageColorData, ref segmentedImage);
-            logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - labDataTime));
+            //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - labDataTime));
 
-            logger.WriteLog("Получение и заполнение текстурных характеристик: ");
-            DateTime textureFeaturesTime = DateTime.Now;
+            //logger.WriteLog("Получение и заполнение текстурных характеристик: ");
+            //DateTime textureFeaturesTime = DateTime.Now;
             // заполние текстурных характеристик для каждого пикселя изображения
             FillSegmentedImageTextureFeatures(imageColorData, ref segmentedImage);
-            logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - textureFeaturesTime));
+            //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - textureFeaturesTime));
 
-            logger.WriteLog("Выполнение условной фильтрации: ");
-            DateTime conditionalFilteringTime = DateTime.Now;
+            //logger.WriteLog("Выполнение условной фильтрации: ");
+            //DateTime conditionalFilteringTime = DateTime.Now;
             // выполнение условной фильтрации и заполние характеристик интенсивности пикселей после фильтрации
             PerformConditionalIntencityFiltering(ref segmentedImage);
-            logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - conditionalFilteringTime));
+            //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - conditionalFilteringTime));
 
-            logger.WriteLog("Выполнение перерасчета параметров регионов: ");
-            DateTime calcRegionParamsTime1 = DateTime.Now;
+            //logger.WriteLog("Выполнение перерасчета параметров регионов: ");
+            //DateTime calcRegionParamsTime1 = DateTime.Now;
             // выполние рассчета всех параметров регионов после заполнения всех параметров пикселей
             Parallel.For(0, segmentedImage.Regions.Count, i =>
             {
                 segmentedImage.Regions[i].CalculateParameters();
             });
-            logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - calcRegionParamsTime1));
+            //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - calcRegionParamsTime1));
 
+            // Раскоментрпорвать только при использовании альтернативного метода KMCCClassification
             //logger.WriteLog("Первое определение соседства регионов: ");
             //DateTime firstNeighborsTime = DateTime.Now;
             //// определение соседства регионов
             //CalculateNeighborhood(ref segmentedImage);
             //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - firstNeighborsTime));
 
-            logger.WriteLog("Выполнение этапа миграции пикселей: ");
-            DateTime pixelMigrationTime = DateTime.Now;
+            //logger.WriteLog("Выполнение этапа миграции пикселей: ");
+            //DateTime pixelMigrationTime = DateTime.Now;
             // классификация пикселей на основе KMCC алгоритма
             KMCCClassification(regularizationParameter, ref segmentedImage);
-            logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - pixelMigrationTime));
+            //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - pixelMigrationTime));
 
-            logger.WriteLog("Выполнение этапа объединения регионов: ");
-            DateTime regionsMergingTime = DateTime.Now;
+            //logger.WriteLog("Выполнение этапа объединения регионов: ");
+            //DateTime regionsMergingTime = DateTime.Now;
             // объединение полученных регионов
             RegionsClassification(regularizationParameter, requiredSegmentsCount, ref segmentedImage);
-            logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - regionsMergingTime));
+            //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - regionsMergingTime));
 
             // постобработка результатов сегментации
 
-            logger.WriteLog("Пространственное разделение регионов: ");
-            DateTime regionsSplitingTime = DateTime.Now;
+            //logger.WriteLog("Пространственное разделение регионов: ");
+            //DateTime regionsSplitingTime = DateTime.Now;
             // отделение пространственно разделенных частей регионов
             SplitRegions(ref segmentedImage);
-            logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - regionsSplitingTime));
+            //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - regionsSplitingTime));
 
-            logger.WriteLog("Выполнение перерасчета параметров регионов: ");
-            DateTime calcRegionParamsTime2 = DateTime.Now;
+            //logger.WriteLog("Выполнение перерасчета параметров регионов: ");
+            //DateTime calcRegionParamsTime2 = DateTime.Now;
             // Пересчитываем все параметры регионов, т.к. количество регионов изменилось
             Parallel.For(0, segmentedImage.Regions.Count, i =>
             {
                 segmentedImage.Regions[i].CalculateParameters();
             });
-            logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - calcRegionParamsTime2));
+            //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - calcRegionParamsTime2));
 
-            logger.WriteLog("Второе определение соседства регионов: ");
-            DateTime SecondNeighborsTime = DateTime.Now;
+            //logger.WriteLog("Второе определение соседства регионов: ");
+            //DateTime SecondNeighborsTime = DateTime.Now;
             // определение соседства регионов
             CalculateNeighborhood(ref segmentedImage);
-            logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - SecondNeighborsTime));
+            //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - SecondNeighborsTime));
 
-            logger.WriteLog("Удаление маленьких регионов: ");
-            DateTime removingSmallRegions = DateTime.Now;
+            //logger.WriteLog("Удаление маленьких регионов: ");
+            //DateTime removingSmallRegions = DateTime.Now;
             // сливаем маленькие регионы с соседними регионами
             RemoveSmallRegions(ref segmentedImage);
-            logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - removingSmallRegions));
+            //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - removingSmallRegions));
 
             // Подсчет разброса точек регионов для сегментированного изображения
             //segmentedImage.CalculateDispersion(requiredSegmentsCount);
 
-            logger.WriteLog("Завершение сегментации, все время сегментации: ");
-            logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - start));
+            //logger.WriteLog("Завершение сегментации, все время сегментации: ");
+            //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - start));
 
             return segmentedImage;
         }
@@ -898,6 +899,10 @@ namespace ImageSegmentation.Segmentation
             }
         }
 
+        /// <summary>
+        /// Удаляет регионы, размером меньше, чем lowThresholdForRegionSize часть изображения путем слияния с наиболее близкими регионами
+        /// </summary>
+        /// <param name="segmentedImage">Сегментируемое изображение</param>
         public static void RemoveSmallRegions(ref SegmentedImage segmentedImage)
         {
             // сортируем регионы по количеству пикселей в них - по возрастанию
