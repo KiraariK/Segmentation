@@ -22,6 +22,10 @@ namespace ImageSegmentation
 
         private void button_browse_Click(object sender, EventArgs e)
         {
+            pictureBox_originImage.Image = null;
+            pictureBox_segmentedImage.Image = null;
+            toolStripStatusLabel1.Text = " ";
+
             OpenFileDialog openFile = new OpenFileDialog();
             openFile.Multiselect = false;
             openFile.RestoreDirectory = true;
@@ -40,23 +44,44 @@ namespace ImageSegmentation
 
         private void button_doSegmentation_Click(object sender, EventArgs e)
         {
+            if (pictureBox_originImage.Image == null)
+            {
+                MessageBox.Show("Выберите изображение для сегментации", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (numericUpDown_defaultSegmentsNumber.Value <= numericUpDown_requiredSegmentsNumber.Value)
+            {
+                MessageBox.Show("Начальное количество сегментов должно быть больше желаемого количества сегментов",
+                    "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (pictureBox_segmentedImage.Image != null)
+                pictureBox_segmentedImage.Image = null; 
+
             System.Diagnostics.Stopwatch swatch = new System.Diagnostics.Stopwatch();
             swatch.Start();
 
-            SegmentedImage segmentedImage = RegionBasedSegmentation.PerformSegmentation(originImage);
+            SegmentedImage segmentedImage = RegionBasedSegmentation.PerformSegmentation(originImage,
+                (int)numericUpDown_defaultSegmentsNumber.Value, (int)numericUpDown_requiredSegmentsNumber.Value);
 
             swatch.Stop();
-            toolStripStatusLabel1.Text = swatch.Elapsed.ToString();
+            toolStripStatusLabel1.Text = "Вермя сегментации: " + swatch.Elapsed.ToString();
 
             segmentedImage.AverageRegionPixelsColor();
 
             pictureBox_segmentedImage.Image = segmentedImage.GetBitmapFromSegments();
-
-            //toolStripStatusLabel1.Text = segmentedImage.Dispersion.ToString();
         }
 
         private void button_saveResult_Click(object sender, EventArgs e)
         {
+            if (pictureBox_segmentedImage.Image == null)
+            {
+                MessageBox.Show("Нечего сохранять", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             saveFileDialog.Filter = "Bitmap files (*.bmp)|*.bmp";
             saveFileDialog.FilterIndex = 2;
             saveFileDialog.RestoreDirectory = true;

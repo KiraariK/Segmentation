@@ -10,13 +10,17 @@ namespace ImageSegmentation.Segmentation
     public class RegionBasedSegmentation
     {
         public static int defaultSegmentSize = 5; // размер начального квадратного сегмента по умолчанию
-        public static int defaultSegmentsCount = 400; // максимальное количество начальных квадратных сегментов изображения
         public static double regularizationParameter = 1.0; // регуляризационный параметр для рассчета геометрической близости
-        public static int requiredSegmentsCount = 13; // требуемое количество регионов
         public static double lowThresholdForRegionSize = 0.01; // минимальный размер сегмента в долях от размера изображения
 
-        public static SegmentedImage PerformSegmentation(Bitmap image)
+        public static int defaultSegmentsCount = 400; // максимальное количество начальных квадратных сегментов изображения
+        public static int requiredSegmentsCount = 30; // требуемое количество регионов
+
+        public static SegmentedImage PerformSegmentation(Bitmap image, int defaultSegmentsNumber, int requiredSegmentsNumber)
         {
+            defaultSegmentsCount = defaultSegmentsNumber;
+            requiredSegmentsCount = requiredSegmentsNumber;
+
             int imageWidth = image.Width;
             int imageHeight = image.Height;
             int imageSize = imageWidth * imageHeight;
@@ -118,9 +122,6 @@ namespace ImageSegmentation.Segmentation
             // сливаем маленькие регионы с соседними регионами
             RemoveSmallRegions(ref segmentedImage);
             //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - removingSmallRegions));
-
-            // Подсчет разброса точек регионов для сегментированного изображения
-            //segmentedImage.CalculateDispersion(requiredSegmentsCount);
 
             //logger.WriteLog("Завершение сегментации, все время сегментации: ");
             //logger.WriteLog(string.Format("{0}\r\n", DateTime.Now - start));
@@ -921,13 +922,13 @@ namespace ImageSegmentation.Segmentation
 
                 Parallel.For(0, mergingRegions.Count, i =>
                 {
-                        // перемещаем пиксели из региона с номером regionsToMerge[i] в регион с номером mergingRegions[i]
-                        segmentedImage.Regions[mergingRegions[i]].AddPixelsWithParametersRecalculation(
-                        segmentedImage.Regions[regionsToMerge[i]].RemovePixels());
+                    // перемещаем пиксели из региона с номером regionsToMerge[i] в регион с номером mergingRegions[i]
+                    segmentedImage.Regions[mergingRegions[i]].AddPixelsWithParametersRecalculation(
+                    segmentedImage.Regions[regionsToMerge[i]].RemovePixels());
                 });
 
                 // удаление пустых регионов
-                regionsToMerge.Sort(delegate(int a, int b)
+                regionsToMerge.Sort(delegate (int a, int b)
                 {
                     return b.CompareTo(a);
                 });

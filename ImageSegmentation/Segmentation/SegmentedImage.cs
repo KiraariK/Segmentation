@@ -8,7 +8,6 @@ namespace ImageSegmentation.Segmentation
         public int Height { get; set; } // Высота изображения
         public int Width { get; set; } // Ширина изображения
         public List<Region> Regions { get; set; } // Список регионов изображения
-        public double Dispersion { get; set; } // Величина разброса точек регионов для сегментируемого изображения
 
         /// <summary>
         /// Конструктор класса создает начальное разбиение изображения на сегменты заданного размера
@@ -122,21 +121,6 @@ namespace ImageSegmentation.Segmentation
             }
 
             return ImageProcessing.ExportImage(colorData, Height, Width);
-        }
-        
-        /// <summary>
-        /// Вычисляет величину разброса точек регионов сегментируемого изображения
-        /// </summary>
-        /// <param name="requiredSegmentsCount">Количество регионов</param>
-        public void CalculateDispersion(double requiredSegmentsCount)
-        {
-            for (int i = 0; i < Regions.Count; i++)
-            {
-                Regions[i].CalculateDispersion();
-                Dispersion += Regions[i].Dispersion;
-            }
-            Dispersion /= requiredSegmentsCount;
-            //Dispersion = Math.Sqrt(Width * Width + Height * Height) / Dispersion;
         }
     }
 }

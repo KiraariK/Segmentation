@@ -18,7 +18,6 @@ namespace ImageSegmentation.Segmentation
         public double[] TextureFeatureSums { get; set; } // Суммы текстурных характеристик по каждому пикселю региона
         public double[] AverageConditionalIntensityFeature { get; set; } // Среднее значение интенсивности региона, полученного после условной фильтрации
         public double[] ConditionalIntensityFeatureSums { get; set; } // Суммы условных характеристик по каждому пикселю региона
-        public double Dispersion { get; set; } // Величина разброса точек региона
 
         public Region()
         {
@@ -31,8 +30,6 @@ namespace ImageSegmentation.Segmentation
             TextureFeatureSums = new double[TextureFeaturesProcessing.numOfFeatures * TextureFeaturesProcessing.colorsCount];
             AverageConditionalIntensityFeature = new double[3];
             ConditionalIntensityFeatureSums = new double[3];
-
-            Dispersion = 0.0;
         }
 
         public Region(Pixel[] pixels)
@@ -48,8 +45,6 @@ namespace ImageSegmentation.Segmentation
             TextureFeatureSums = new double[TextureFeaturesProcessing.numOfFeatures * TextureFeaturesProcessing.colorsCount];
             AverageConditionalIntensityFeature = new double[3];
             ConditionalIntensityFeatureSums = new double[3];
-
-            Dispersion = 0.0;
         }
 
         /// <summary>
@@ -413,39 +408,6 @@ namespace ImageSegmentation.Segmentation
             }
 
             return isFound;
-        }
-
-        /// <summary>
-        /// Вычисляет величину разброса точек региона
-        /// </summary>
-        public void CalculateDispersion()
-        {
-            // Извлекаем матрицу идентификаторов пикселей - в каждой строке находится идентификатор (координаты x и y пикселя)
-            int[][] pixelIds = new int[RegionPixels.Count][];
-            for (int i = 0; i < RegionPixels.Count; i++)
-                pixelIds[i] = RegionPixels[i].Id;
-
-            // Ищем минимальные расстояния от каждой точки региона до каждой точки региона
-            double[] minDistances = new double[RegionPixels.Count];
-            for (int i = 0; i < RegionPixels.Count; i++)
-            {
-                double[] distances = new double[RegionPixels.Count];
-                // Считаем сумму расстояний от точки i до всех остальных точек
-                for (int j = 0; j < RegionPixels.Count; j++)
-                {
-                    if (i != j)
-                    {
-                        // Находим расстояние до каждой точки
-                        distances[j] = Math.Sqrt((pixelIds[i][0] - pixelIds[j][0]) * (pixelIds[i][0] - pixelIds[j][0]) +
-                            (pixelIds[i][1] - pixelIds[j][1]) * (pixelIds[i][1] - pixelIds[j][1]));
-                    }
-                    else
-                        distances[j] = double.MaxValue;
-                }
-                // Если не нашелся хотя бы один соседний пиксель
-                if (!distances.Contains(1.0))
-                    Dispersion += distances.Min();
-            }
         }
     }
 }
